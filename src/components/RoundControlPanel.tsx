@@ -5,6 +5,7 @@ import { GameSettingsPanel } from "@/src/components/GameSettingsPanel";
 import { MiniGameRoulette } from "@/src/components/MiniGameRoulette";
 import { TeamStatusPanel } from "@/src/components/TeamStatusPanel";
 import { WinnerSelector } from "@/src/components/WinnerSelector";
+import { shouldActivateBurst } from "@/src/lib/burst";
 import { useGameStore } from "@/src/stores/gameStore";
 
 const phaseLabels = {
@@ -18,8 +19,12 @@ const phaseLabels = {
 export function RoundControlPanel() {
   const round = useGameStore((state) => state.round);
   const phase = useGameStore((state) => state.phase);
+  const teams = useGameStore((state) => state.teams);
+  const boardCellCount = useGameStore((state) => state.boardCellCount);
   const isBurstActive = useGameStore((state) => state.isBurstActive);
+  const isManualBurstEnabled = useGameStore((state) => state.isManualBurstEnabled);
   const burstMultiplier = useGameStore((state) => state.burstMultiplier);
+  const toggleManualBurst = useGameStore((state) => state.toggleManualBurst);
   const rollDiceForAllTeams = useGameStore(
     (state) => state.rollDiceForAllTeams,
   );
@@ -27,6 +32,12 @@ export function RoundControlPanel() {
   const resetGame = useGameStore((state) => state.resetGame);
   const canRoll = phase === "idle" || phase === "resolved";
   const canResolve = phase === "selectingWinners";
+  const isAutoBurstActive = shouldActivateBurst(teams, boardCellCount);
+  const burstLabel = isManualBurstEnabled
+    ? "Burst ON: Manual"
+    : isAutoBurstActive
+      ? "Burst ON: Auto"
+      : "Burst OFF";
 
   return (
     <aside className="flex max-h-[calc(100vh-48px)] w-full flex-col gap-4 overflow-auto rounded-[28px] border border-white/14 bg-slate-900/88 p-5 shadow-2xl lg:w-[470px]">
@@ -50,12 +61,31 @@ export function RoundControlPanel() {
       <div
         className={`rounded-2xl border p-4 ${isBurstActive ? "border-amber-300 bg-amber-300/20" : "border-white/10 bg-white/[0.05]"}`}
       >
-        <p className="text-sm font-bold text-slate-200">버스트 모드</p>
-        <p className="mt-1 text-2xl font-black text-white">
-          {isBurstActive
-            ? `발동 중 · 다음 주사위 ×${burstMultiplier}`
-            : "대기 중 · 기본 배수 ×1"}
-        </p>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-bold text-slate-200">버스트 모드</p>
+            <p className="mt-1 text-2xl font-black text-white">{burstLabel}</p>
+            <p className="mt-1 text-sm font-bold text-amber-100">
+              다음 주사위 ×{isBurstActive ? burstMultiplier : 1}
+            </p>
+          </div>
+          <button
+            className={`relative h-10 w-20 rounded-full border p-1 transition ${
+              isManualBurstEnabled
+                ? "border-amber-200 bg-amber-300"
+                : "border-white/15 bg-slate-950"
+            }`}
+            type="button"
+            aria-pressed={isManualBurstEnabled}
+            onClick={toggleManualBurst}
+          >
+            <span
+              className={`block h-8 w-8 rounded-full bg-white shadow-lg transition ${
+                isManualBurstEnabled ? "translate-x-10" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

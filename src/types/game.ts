@@ -31,10 +31,14 @@ export type GameState = {
   phase: GamePhase;
   burstMultiplier: 1 | 2;
   isBurstActive: boolean;
+  isManualBurstEnabled: boolean;
   selectedWinnerIds: string[];
   lastDiceResults: Record<string, number>;
   selectedMiniGameId: string | null;
+  rouletteTargetMiniGameId: string | null;
   isRouletteRolling: boolean;
+  isDiceOverlayVisible: boolean;
+  diceOverlayStartedAt?: number;
   boardCellCount: number;
   boardShape: BoardShape;
 };
@@ -45,6 +49,8 @@ export type GameActions = {
   resolveRound: () => void;
   resetGame: () => void;
   manuallySetTeamPosition: (teamId: string, position: number) => void;
+  toggleManualBurst: () => void;
+  hideDiceOverlay: () => void;
   rollMiniGame: () => void;
   setSelectedMiniGame: (miniGameId: string) => void;
   setBoardCellCount: (count: number) => void;

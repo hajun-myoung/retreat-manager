@@ -35,6 +35,8 @@ const DEFAULT_TEAM_COUNT = 8;
 const MIN_TEAM_COUNT = 2;
 const MAX_TEAM_COUNT = 12;
 const DEFAULT_BOARD_SHAPE: BoardShape = "square";
+const MINI_GAME_ROULETTE_DURATION_MS = 3000;
+const DICE_OVERLAY_DURATION_MS = 1800;
 
 function clampTeamCount(count: number) {
   if (Number.isNaN(count)) {
@@ -70,6 +72,15 @@ function resetTeamsForNewGame(teams: Team[]): Team[] {
   }));
 }
 
+function getBurstFields(teams: Team[], boardCellCount: number, isManualBurstEnabled: boolean) {
+  const isBurstActive = isManualBurstEnabled || shouldActivateBurst(teams, boardCellCount);
+
+  return {
+    isBurstActive,
+    burstMultiplier: isBurstActive ? 2 : 1,
+  } satisfies Pick<GameState, "isBurstActive" | "burstMultiplier">;
+}
+
 const initialState: GameState = {
   teams: createInitialTeams(),
   miniGames,
@@ -77,10 +88,14 @@ const initialState: GameState = {
   phase: "idle",
   burstMultiplier: 1,
   isBurstActive: false,
+  isManualBurstEnabled: false,
   selectedWinnerIds: [],
   lastDiceResults: {},
   selectedMiniGameId: miniGames[0]?.id ?? null,
+  rouletteTargetMiniGameId: null,
   isRouletteRolling: false,
+  isDiceOverlayVisible: false,
+  diceOverlayStartedAt: undefined,
   boardCellCount: DEFAULT_BOARD_CELL_COUNT,
   boardShape: DEFAULT_BOARD_SHAPE,
 };
@@ -90,16 +105,19 @@ export const useGameStore = create<GameStore>()(
     (set, get) => ({
       ...initialState,
       rollDiceForAllTeams: () => {
-        const { phase, teams, isBurstActive, burstMultiplier, boardCellCount } = get();
+        const { phase, teams, boardCellCount, isManualBurstEnabled } = get();
 
         if (phase !== "idle" && phase !== "resolved") {
           return;
         }
 
+        const burstFields = getBurstFields(teams, boardCellCount, isManualBurstEnabled);
+        const { isBurstActive } = burstFields;
+        const appliedMultiplier = isBurstActive ? 2 : 1;
         const lastDiceResults: Record<string, number> = {};
         const movedTeams = teams.map((team) => {
           const rawDiceValue = rollD4();
-          const diceResult = rawDiceValue * (isBurstActive ? burstMultiplier : 1);
+          const diceResult = rawDiceValue * appliedMultiplier;
           lastDiceResults[team.id] = diceResult;
 
           return {
@@ -115,7 +133,14 @@ export const useGameStore = create<GameStore>()(
           lastDiceResults,
           selectedWinnerIds: [],
           phase: "selectingWinners",
+          isDiceOverlayVisible: true,
+          diceOverlayStartedAt: Date.now(),
+          ...burstFields,
         });
+
+        window.setTimeout(() => {
+          get().hideDiceOverlay();
+        }, DICE_OVERLAY_DURATION_MS);
       },
       toggleWinner: (teamId) => {
         const { selectedWinnerIds } = get();
@@ -128,7 +153,7 @@ export const useGameStore = create<GameStore>()(
         });
       },
       resolveRound: () => {
-        const { selectedWinnerIds, teams, round, boardCellCount } = get();
+        const { selectedWinnerIds, teams, round, boardCellCount, isManualBurstEnabled } = get();
         const finishCell = getFinishCellIndex(boardCellCount);
         const resolvedTeams = teams.map((team) => {
           const isWinner = selectedWinnerIds.includes(team.id);
@@ -140,14 +165,13 @@ export const useGameStore = create<GameStore>()(
             hasFinished: position === finishCell,
           };
         });
-        const isBurstActive = shouldActivateBurst(resolvedTeams, boardCellCount);
+        const burstFields = getBurstFields(resolvedTeams, boardCellCount, isManualBurstEnabled);
 
         set({
           teams: resolvedTeams,
           round: round + 1,
           phase: "resolved",
-          burstMultiplier: isBurstActive ? 2 : 1,
-          isBurstActive,
+          ...burstFields,
           selectedWinnerIds: [],
         });
       },
@@ -164,7 +188,7 @@ export const useGameStore = create<GameStore>()(
         });
       },
       manuallySetTeamPosition: (teamId, position) => {
-        const { boardCellCount } = get();
+        const { boardCellCount, isManualBurstEnabled } = get();
         const finishCell = getFinishCellIndex(boardCellCount);
         const nextPosition = clampBoardPosition(position, boardCellCount);
         const teams = get().teams.map((team) =>
@@ -177,12 +201,26 @@ export const useGameStore = create<GameStore>()(
               }
             : team,
         );
-        const isBurstActive = shouldActivateBurst(teams, boardCellCount);
+        const burstFields = getBurstFields(teams, boardCellCount, isManualBurstEnabled);
 
         set({
           teams,
-          isBurstActive,
-          burstMultiplier: isBurstActive ? 2 : 1,
+          ...burstFields,
+        });
+      },
+      toggleManualBurst: () => {
+        const { teams, boardCellCount, isManualBurstEnabled } = get();
+        const nextManualBurstEnabled = !isManualBurstEnabled;
+
+        set({
+          isManualBurstEnabled: nextManualBurstEnabled,
+          ...getBurstFields(teams, boardCellCount, nextManualBurstEnabled),
+        });
+      },
+      hideDiceOverlay: () => {
+        set({
+          isDiceOverlayVisible: false,
+          diceOverlayStartedAt: undefined,
         });
       },
       rollMiniGame: () => {
@@ -192,17 +230,21 @@ export const useGameStore = create<GameStore>()(
           return;
         }
 
-        set({ isRouletteRolling: true });
+        const { miniGames: currentMiniGames } = get();
+        const selectedMiniGame = currentMiniGames[Math.floor(Math.random() * currentMiniGames.length)];
 
         window.setTimeout(() => {
-          const { miniGames: currentMiniGames } = get();
-          const selectedMiniGame = currentMiniGames[Math.floor(Math.random() * currentMiniGames.length)];
-
           set({
             selectedMiniGameId: selectedMiniGame?.id ?? null,
+            rouletteTargetMiniGameId: null,
             isRouletteRolling: false,
           });
-        }, 1500);
+        }, MINI_GAME_ROULETTE_DURATION_MS);
+
+        set({
+          rouletteTargetMiniGameId: selectedMiniGame?.id ?? null,
+          isRouletteRolling: true,
+        });
       },
       setSelectedMiniGame: (miniGameId) => {
         const exists = get().miniGames.some((miniGame) => miniGame.id === miniGameId);
@@ -213,12 +255,13 @@ export const useGameStore = create<GameStore>()(
 
         set({
           selectedMiniGameId: miniGameId,
+          rouletteTargetMiniGameId: null,
           isRouletteRolling: false,
         });
       },
       setBoardCellCount: (count) => {
         const nextCellCount = clampBoardCellCount(count);
-        const { boardCellCount, teams } = get();
+        const { boardCellCount, teams, isManualBurstEnabled } = get();
 
         if (nextCellCount === boardCellCount) {
           return;
@@ -244,13 +287,12 @@ export const useGameStore = create<GameStore>()(
             hasFinished: position === finishCell,
           };
         });
-        const isBurstActive = shouldActivateBurst(adjustedTeams, nextCellCount);
+        const burstFields = getBurstFields(adjustedTeams, nextCellCount, isManualBurstEnabled);
 
         set({
           boardCellCount: nextCellCount,
           teams: adjustedTeams,
-          isBurstActive,
-          burstMultiplier: isBurstActive ? 2 : 1,
+          ...burstFields,
         });
       },
       setBoardShape: (shape) => {
@@ -258,7 +300,7 @@ export const useGameStore = create<GameStore>()(
       },
       setTeamCount: (count) => {
         const nextTeamCount = clampTeamCount(count);
-        const { teams, selectedWinnerIds } = get();
+        const { teams, selectedWinnerIds, boardCellCount, isManualBurstEnabled } = get();
         const nextTeams =
           nextTeamCount <= teams.length
             ? teams.slice(0, nextTeamCount)
@@ -273,6 +315,7 @@ export const useGameStore = create<GameStore>()(
         set({
           teams: nextTeams,
           selectedWinnerIds: selectedWinnerIds.filter((teamId) => nextTeamIds.has(teamId)),
+          ...getBurstFields(nextTeams, boardCellCount, isManualBurstEnabled),
         });
       },
       updateTeamName: (teamId, name) => {
@@ -293,12 +336,27 @@ export const useGameStore = create<GameStore>()(
     {
       name: GAME_STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
-      merge: (persistedState, currentState) => ({
-        ...currentState,
-        ...(persistedState as Partial<GameState>),
-        miniGames,
-        isRouletteRolling: false,
-      }),
+      merge: (persistedState, currentState) => {
+        const mergedState = {
+          ...currentState,
+          ...(persistedState as Partial<GameState>),
+          miniGames,
+        } as GameStore;
+
+        return {
+          ...mergedState,
+          ...getBurstFields(
+            mergedState.teams,
+            mergedState.boardCellCount,
+            Boolean(mergedState.isManualBurstEnabled),
+          ),
+          isManualBurstEnabled: Boolean(mergedState.isManualBurstEnabled),
+          isRouletteRolling: false,
+          rouletteTargetMiniGameId: null,
+          isDiceOverlayVisible: false,
+          diceOverlayStartedAt: undefined,
+        };
+      },
       partialize: (state) => ({
         teams: state.teams,
         miniGames: state.miniGames,
@@ -306,10 +364,10 @@ export const useGameStore = create<GameStore>()(
         phase: state.phase,
         burstMultiplier: state.burstMultiplier,
         isBurstActive: state.isBurstActive,
+        isManualBurstEnabled: state.isManualBurstEnabled,
         selectedWinnerIds: state.selectedWinnerIds,
         lastDiceResults: state.lastDiceResults,
         selectedMiniGameId: state.selectedMiniGameId,
-        isRouletteRolling: state.isRouletteRolling,
         boardCellCount: state.boardCellCount,
         boardShape: state.boardShape,
       }),

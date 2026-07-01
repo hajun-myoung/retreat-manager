@@ -5,10 +5,15 @@ import { BOARD_HEIGHT, BOARD_WIDTH, generateBoardCells, getFinishCellIndex } fro
 import { getPawnTarget } from "@/src/lib/movement";
 import { useGameStore } from "@/src/stores/gameStore";
 import { Cell } from "@/src/components/Cell";
+import { DiceResultOverlay } from "@/src/components/DiceResultOverlay";
 import { Pawn } from "@/src/components/Pawn";
 
 export function Board() {
   const teams = useGameStore((state) => state.teams);
+  const lastDiceResults = useGameStore((state) => state.lastDiceResults);
+  const burstMultiplier = useGameStore((state) => state.burstMultiplier);
+  const isBurstActive = useGameStore((state) => state.isBurstActive);
+  const isDiceOverlayVisible = useGameStore((state) => state.isDiceOverlayVisible);
   const boardCellCount = useGameStore((state) => state.boardCellCount);
   const boardShape = useGameStore((state) => state.boardShape);
   const boardCells = useMemo(
@@ -93,6 +98,13 @@ export function Board() {
             return <Pawn key={team.id} team={team} x={target.x} y={target.y} />;
           })}
         </div>
+        <DiceResultOverlay
+          teams={teams}
+          lastDiceResults={lastDiceResults}
+          burstMultiplier={burstMultiplier}
+          isBurstActive={isBurstActive}
+          visible={isDiceOverlayVisible}
+        />
       </div>
     </section>
   );

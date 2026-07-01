@@ -7,7 +7,7 @@ export function DicePanel() {
   const teams = useGameStore((state) => state.teams);
   const lastDiceResults = useGameStore((state) => state.lastDiceResults);
   const phase = useGameStore((state) => state.phase);
-  const isRollingView = phase === "selectingWinners";
+  const isRollingView = phase === "awaitingMiniGame";
 
   return (
     <div className="rounded-2xl border border-white/12 bg-white/[0.07] p-4">
@@ -45,4 +45,3 @@ export function DicePanel() {
     </div>
   );
 }
-

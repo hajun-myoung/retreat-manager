@@ -6,6 +6,7 @@ import { getPawnTarget } from "@/src/lib/movement";
 import { useGameStore } from "@/src/stores/gameStore";
 import { Cell } from "@/src/components/Cell";
 import { DiceResultOverlay } from "@/src/components/DiceResultOverlay";
+import { FinishRankingPanel } from "@/src/components/FinishRankingPanel";
 import { Pawn } from "@/src/components/Pawn";
 
 export function Board() {
@@ -14,6 +15,9 @@ export function Board() {
   const burstMultiplier = useGameStore((state) => state.burstMultiplier);
   const isBurstActive = useGameStore((state) => state.isBurstActive);
   const isDiceOverlayVisible = useGameStore((state) => state.isDiceOverlayVisible);
+  const round = useGameStore((state) => state.round);
+  const miniGames = useGameStore((state) => state.miniGames);
+  const selectedMiniGameId = useGameStore((state) => state.selectedMiniGameId);
   const boardCellCount = useGameStore((state) => state.boardCellCount);
   const boardShape = useGameStore((state) => state.boardShape);
   const boardCells = useMemo(
@@ -27,6 +31,7 @@ export function Board() {
     [boardCellCount, boardShape],
   );
   const finishIndex = getFinishCellIndex(boardCellCount);
+  const selectedMiniGame = miniGames.find((miniGame) => miniGame.id === selectedMiniGameId);
   const cellSize = boardCellCount > 32 ? 58 : boardCellCount > 24 ? 68 : 84;
   const pathPoints = boardCells.map((cell) => `${cell.x},${cell.y}`).join(" ");
 
@@ -98,8 +103,11 @@ export function Board() {
             return <Pawn key={team.id} team={team} x={target.x} y={target.y} />;
           })}
         </div>
+        <FinishRankingPanel />
         <DiceResultOverlay
+          round={round}
           teams={teams}
+          selectedMiniGameName={selectedMiniGame?.name ?? "미니게임 미선택"}
           lastDiceResults={lastDiceResults}
           burstMultiplier={burstMultiplier}
           isBurstActive={isBurstActive}

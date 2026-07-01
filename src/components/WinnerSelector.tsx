@@ -3,40 +3,30 @@
 import { useGameStore } from "@/src/stores/gameStore";
 
 export function WinnerSelector() {
-  const teams = useGameStore((state) => state.teams);
-  const selectedWinnerIds = useGameStore((state) => state.selectedWinnerIds);
-  const toggleWinner = useGameStore((state) => state.toggleWinner);
   const phase = useGameStore((state) => state.phase);
-  const isEnabled = phase === "selectingWinners";
+  const selectedWinnerIds = useGameStore((state) => state.selectedWinnerIds);
+  const openDiceOverlay = useGameStore((state) => state.openDiceOverlay);
+  const isAwaitingMiniGame = phase === "awaitingMiniGame";
 
   return (
     <div className="rounded-2xl border border-white/12 bg-white/[0.07] p-4">
       <h2 className="mb-3 text-lg font-black text-white">미니게임 승리팀</h2>
-      <div className="grid grid-cols-2 gap-2">
-        {teams.map((team) => {
-          const checked = selectedWinnerIds.includes(team.id);
-
-          return (
-            <label
-              key={team.id}
-              className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${
-                checked ? "border-amber-300 bg-amber-300/20" : "border-white/10 bg-slate-950/40"
-              } ${isEnabled ? "" : "cursor-not-allowed opacity-55"}`}
-            >
-              <input
-                className="h-5 w-5 accent-amber-300"
-                type="checkbox"
-                checked={checked}
-                disabled={!isEnabled}
-                onChange={() => toggleWinner(team.id)}
-              />
-              <span className="h-4 w-4 rounded-full" style={{ backgroundColor: team.color }} />
-              <span className="text-sm font-black text-white">{team.name}</span>
-            </label>
-          );
-        })}
+      <div className="rounded-xl border border-white/10 bg-slate-950/45 p-4">
+        <p className="text-sm font-bold leading-6 text-slate-300">
+          승리팀 선택과 결과 반영은 메인 보드의 라운드 결과 처리 화면에서 진행합니다.
+        </p>
+        <p className="mt-2 text-base font-black text-white">
+          현재 선택 {selectedWinnerIds.length}팀
+        </p>
+        <button
+          className="mt-3 h-11 w-full rounded-xl bg-amber-300 text-sm font-black text-slate-950 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
+          type="button"
+          disabled={!isAwaitingMiniGame}
+          onClick={openDiceOverlay}
+        >
+          결과 처리 화면 열기
+        </button>
       </div>
     </div>
   );
 }
-

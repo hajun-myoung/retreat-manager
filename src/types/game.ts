@@ -15,13 +15,20 @@ export type MiniGame = {
   description: string;
 };
 
+export type FinishRecord = {
+  teamId: string;
+  rank: number;
+  round: number;
+  type: "finished" | "autoLast";
+};
+
 export type BoardShape = "square" | "heart" | "cross";
 
 export type GamePhase =
   | "idle"
   | "rolling"
-  | "moved"
-  | "selectingWinners"
+  | "awaitingMiniGame"
+  | "resolving"
   | "resolved";
 
 export type GameState = {
@@ -34,11 +41,11 @@ export type GameState = {
   isManualBurstEnabled: boolean;
   selectedWinnerIds: string[];
   lastDiceResults: Record<string, number>;
+  finishRecords: FinishRecord[];
   selectedMiniGameId: string | null;
   rouletteTargetMiniGameId: string | null;
   isRouletteRolling: boolean;
   isDiceOverlayVisible: boolean;
-  diceOverlayStartedAt?: number;
   boardCellCount: number;
   boardShape: BoardShape;
 };
@@ -50,7 +57,8 @@ export type GameActions = {
   resetGame: () => void;
   manuallySetTeamPosition: (teamId: string, position: number) => void;
   toggleManualBurst: () => void;
-  hideDiceOverlay: () => void;
+  openDiceOverlay: () => void;
+  closeDiceOverlay: () => void;
   rollMiniGame: () => void;
   setSelectedMiniGame: (miniGameId: string) => void;
   setBoardCellCount: (count: number) => void;

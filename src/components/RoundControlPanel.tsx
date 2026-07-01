@@ -11,8 +11,8 @@ import { useGameStore } from "@/src/stores/gameStore";
 const phaseLabels = {
   idle: "대기",
   rolling: "굴리는 중",
-  moved: "이동 완료",
-  selectingWinners: "승리팀 선택",
+  awaitingMiniGame: "미니게임 진행",
+  resolving: "결과 반영 중",
   resolved: "라운드 확정",
 } as const;
 
@@ -25,13 +25,13 @@ export function RoundControlPanel() {
   const isManualBurstEnabled = useGameStore((state) => state.isManualBurstEnabled);
   const burstMultiplier = useGameStore((state) => state.burstMultiplier);
   const toggleManualBurst = useGameStore((state) => state.toggleManualBurst);
+  const openDiceOverlay = useGameStore((state) => state.openDiceOverlay);
   const rollDiceForAllTeams = useGameStore(
     (state) => state.rollDiceForAllTeams,
   );
-  const resolveRound = useGameStore((state) => state.resolveRound);
   const resetGame = useGameStore((state) => state.resetGame);
   const canRoll = phase === "idle" || phase === "resolved";
-  const canResolve = phase === "selectingWinners";
+  const canOpenOverlay = phase === "awaitingMiniGame";
   const isAutoBurstActive = shouldActivateBurst(teams, boardCellCount);
   const burstLabel = isManualBurstEnabled
     ? "Burst ON: Manual"
@@ -100,10 +100,10 @@ export function RoundControlPanel() {
         <button
           className="h-14 rounded-2xl bg-amber-300 text-lg font-black text-slate-950 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
           type="button"
-          disabled={!canResolve}
-          onClick={resolveRound}
+          disabled={!canOpenOverlay}
+          onClick={openDiceOverlay}
         >
-          결과 확정
+          결과 화면 열기
         </button>
       </div>
 

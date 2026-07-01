@@ -15,6 +15,7 @@ export function Board() {
   const burstMultiplier = useGameStore((state) => state.burstMultiplier);
   const isBurstActive = useGameStore((state) => state.isBurstActive);
   const isDiceOverlayVisible = useGameStore((state) => state.isDiceOverlayVisible);
+  const isDiceRolling = useGameStore((state) => state.isDiceRolling);
   const round = useGameStore((state) => state.round);
   const miniGames = useGameStore((state) => state.miniGames);
   const selectedMiniGameId = useGameStore((state) => state.selectedMiniGameId);
@@ -111,6 +112,7 @@ export function Board() {
           lastDiceResults={lastDiceResults}
           burstMultiplier={burstMultiplier}
           isBurstActive={isBurstActive}
+          isDiceRolling={isDiceRolling}
           visible={isDiceOverlayVisible}
         />
       </div>

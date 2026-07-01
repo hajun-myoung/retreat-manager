@@ -22,6 +22,13 @@ export type FinishRecord = {
   type: "finished" | "autoLast";
 };
 
+export type DiceRollResult = {
+  teamId: string;
+  baseValue: number;
+  multiplier: 1 | 2;
+  finalValue: number;
+};
+
 export type BoardShape = "square" | "heart" | "cross";
 
 export type GamePhase =
@@ -40,12 +47,13 @@ export type GameState = {
   isBurstActive: boolean;
   isManualBurstEnabled: boolean;
   selectedWinnerIds: string[];
-  lastDiceResults: Record<string, number>;
+  lastDiceResults: Record<string, DiceRollResult>;
   finishRecords: FinishRecord[];
   selectedMiniGameId: string | null;
   rouletteTargetMiniGameId: string | null;
   isRouletteRolling: boolean;
   isDiceOverlayVisible: boolean;
+  isDiceRolling: boolean;
   boardCellCount: number;
   boardShape: BoardShape;
 };

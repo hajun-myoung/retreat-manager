@@ -31,7 +31,7 @@ export function DicePanel() {
                 transformStyle: "preserve-3d",
               }}
             >
-              {lastDiceResults[team.id] ?? "-"}
+              {lastDiceResults[team.id]?.finalValue ?? "-"}
             </motion.div>
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-white">{team.name}</p>

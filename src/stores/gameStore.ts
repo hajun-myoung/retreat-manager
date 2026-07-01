@@ -10,11 +10,11 @@ import {
   clampBoardPosition,
   getFinishCellIndex,
 } from "@/src/lib/board";
-import { rollD4 } from "@/src/lib/dice";
+import { rollWeightedDice } from "@/src/lib/dice";
 import { miniGames } from "@/src/lib/miniGames";
 import { movePosition } from "@/src/lib/movement";
 import { GAME_STORAGE_KEY } from "@/src/lib/storage";
-import type { BoardShape, FinishRecord, GameState, GameStore, Team } from "@/src/types/game";
+import type { BoardShape, DiceRollResult, FinishRecord, GameState, GameStore, Team } from "@/src/types/game";
 
 const teamColors = [
   "#ff4d6d",
@@ -36,6 +36,7 @@ const MIN_TEAM_COUNT = 2;
 const MAX_TEAM_COUNT = 12;
 const DEFAULT_BOARD_SHAPE: BoardShape = "square";
 const MINI_GAME_ROULETTE_DURATION_MS = 3000;
+const DICE_ROLLING_DURATION_MS = 1500;
 
 function clampTeamCount(count: number) {
   if (Number.isNaN(count)) {
@@ -155,6 +156,32 @@ function normalizeFinishRecordsForTeams(records: FinishRecord[], teams: Team[], 
   return nextRecords;
 }
 
+function normalizeDiceResults(
+  results: GameState["lastDiceResults"] | Record<string, number> | undefined,
+) {
+  if (!results) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(results).map(([teamId, result]) => {
+      if (typeof result === "number") {
+        return [
+          teamId,
+          {
+            teamId,
+            baseValue: result,
+            multiplier: 1,
+            finalValue: result,
+          } satisfies DiceRollResult,
+        ];
+      }
+
+      return [teamId, result];
+    }),
+  );
+}
+
 const initialState: GameState = {
   teams: createInitialTeams(),
   miniGames,
@@ -170,6 +197,7 @@ const initialState: GameState = {
   rouletteTargetMiniGameId: null,
   isRouletteRolling: false,
   isDiceOverlayVisible: false,
+  isDiceRolling: false,
   boardCellCount: DEFAULT_BOARD_CELL_COUNT,
   boardShape: DEFAULT_BOARD_SHAPE,
 };
@@ -190,11 +218,16 @@ export const useGameStore = create<GameStore>()(
         const burstFields = getBurstFields(teams, boardCellCount, isManualBurstEnabled);
         const { isBurstActive } = burstFields;
         const appliedMultiplier = isBurstActive ? 2 : 1;
-        const lastDiceResults: Record<string, number> = {};
+        const lastDiceResults: Record<string, DiceRollResult> = {};
         const movedTeams = teams.map((team) => {
-          const rawDiceValue = rollD4();
-          const diceResult = rawDiceValue * appliedMultiplier;
-          lastDiceResults[team.id] = diceResult;
+          const baseValue = rollWeightedDice();
+          const diceResult = baseValue * appliedMultiplier;
+          lastDiceResults[team.id] = {
+            teamId: team.id,
+            baseValue,
+            multiplier: appliedMultiplier,
+            finalValue: diceResult,
+          };
 
           return {
             ...team,
@@ -210,13 +243,18 @@ export const useGameStore = create<GameStore>()(
           selectedWinnerIds: [],
           phase: "awaitingMiniGame",
           isDiceOverlayVisible: true,
+          isDiceRolling: true,
           ...burstFields,
         });
+
+        window.setTimeout(() => {
+          set({ isDiceRolling: false });
+        }, DICE_ROLLING_DURATION_MS);
       },
       toggleWinner: (teamId) => {
-        const { selectedWinnerIds, phase, isDiceOverlayVisible } = get();
+        const { selectedWinnerIds, phase, isDiceOverlayVisible, isDiceRolling } = get();
 
-        if (phase !== "awaitingMiniGame" && !isDiceOverlayVisible) {
+        if (isDiceRolling || (phase !== "awaitingMiniGame" && !isDiceOverlayVisible)) {
           return;
         }
 
@@ -237,9 +275,10 @@ export const useGameStore = create<GameStore>()(
           isManualBurstEnabled,
           phase,
           finishRecords,
+          isDiceRolling,
         } = get();
 
-        if (phase !== "awaitingMiniGame") {
+        if (phase !== "awaitingMiniGame" || isDiceRolling) {
           return;
         }
 
@@ -273,6 +312,7 @@ export const useGameStore = create<GameStore>()(
           ...burstFields,
           selectedWinnerIds: [],
           isDiceOverlayVisible: false,
+          isDiceRolling: false,
         });
       },
       resetGame: () => {
@@ -476,10 +516,12 @@ export const useGameStore = create<GameStore>()(
           ),
           phase: normalizedPhase,
           finishRecords: mergedState.finishRecords ?? [],
+          lastDiceResults: normalizeDiceResults(mergedState.lastDiceResults),
           isManualBurstEnabled: Boolean(mergedState.isManualBurstEnabled),
           isRouletteRolling: false,
           rouletteTargetMiniGameId: null,
           isDiceOverlayVisible: false,
+          isDiceRolling: false,
         };
       },
       partialize: (state) => ({

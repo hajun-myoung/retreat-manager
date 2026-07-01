@@ -1,8 +1,8 @@
-import { FINISH_CELL, clampBoardPosition, getBoardCell } from "@/src/lib/board";
+import { clampBoardPosition, getBoardCell, getFinishCellIndex, type BoardCell } from "@/src/lib/board";
 import type { Team } from "@/src/types/game";
 
-export function movePosition(position: number, amount: number) {
-  return Math.min(clampBoardPosition(position) + amount, FINISH_CELL);
+export function movePosition(position: number, amount: number, cellCount: number) {
+  return Math.min(clampBoardPosition(position, cellCount) + amount, getFinishCellIndex(cellCount));
 }
 
 export function getPawnOffset(index: number, total: number) {
@@ -19,15 +19,14 @@ export function getPawnOffset(index: number, total: number) {
   };
 }
 
-export function getPawnTarget(team: Team, teams: Team[]) {
+export function getPawnTarget(team: Team, teams: Team[], cells: BoardCell[]) {
   const cellMates = teams.filter((candidate) => candidate.position === team.position);
   const stackIndex = cellMates.findIndex((candidate) => candidate.id === team.id);
   const offset = getPawnOffset(stackIndex, cellMates.length);
-  const cell = getBoardCell(team.position);
+  const cell = getBoardCell(cells, team.position);
 
   return {
     x: cell.x + offset.x,
     y: cell.y + offset.y,
   };
 }
-

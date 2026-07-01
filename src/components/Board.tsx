@@ -1,6 +1,7 @@
 "use client";
 
-import { boardCells, BOARD_HEIGHT, BOARD_WIDTH } from "@/src/lib/board";
+import { useMemo } from "react";
+import { BOARD_HEIGHT, BOARD_WIDTH, generateBoardCells, getFinishCellIndex } from "@/src/lib/board";
 import { getPawnTarget } from "@/src/lib/movement";
 import { useGameStore } from "@/src/stores/gameStore";
 import { Cell } from "@/src/components/Cell";
@@ -8,6 +9,21 @@ import { Pawn } from "@/src/components/Pawn";
 
 export function Board() {
   const teams = useGameStore((state) => state.teams);
+  const boardCellCount = useGameStore((state) => state.boardCellCount);
+  const boardShape = useGameStore((state) => state.boardShape);
+  const boardCells = useMemo(
+    () =>
+      generateBoardCells({
+        cellCount: boardCellCount,
+        shape: boardShape,
+        width: BOARD_WIDTH,
+        height: BOARD_HEIGHT,
+      }),
+    [boardCellCount, boardShape],
+  );
+  const finishIndex = getFinishCellIndex(boardCellCount);
+  const cellSize = boardCellCount > 32 ? 58 : boardCellCount > 24 ? 68 : 84;
+  const pathPoints = boardCells.map((cell) => `${cell.x},${cell.y}`).join(" ");
 
   return (
     <section className="min-w-0 flex-1">
@@ -20,7 +36,7 @@ export function Board() {
             className="absolute inset-0"
             viewBox={`0 0 ${BOARD_WIDTH} ${BOARD_HEIGHT}`}
             role="img"
-            aria-label="22칸 순환 보드"
+            aria-label={`${boardCellCount}칸 ${boardShape} 보드`}
           >
             <defs>
               <linearGradient id="boardGlow" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -29,8 +45,8 @@ export function Board() {
                 <stop offset="100%" stopColor="#fb7185" />
               </linearGradient>
             </defs>
-            <path
-              d="M84 84 H916 V636 H84 V84 H360 L498 360 L360 360"
+            <polyline
+              points={`${pathPoints} ${boardCells[0]?.x ?? 0},${boardCells[0]?.y ?? 0}`}
               fill="none"
               stroke="url(#boardGlow)"
               strokeLinecap="round"
@@ -38,8 +54,8 @@ export function Board() {
               strokeWidth="24"
               opacity="0.24"
             />
-            <path
-              d="M84 84 H916 V636 H84 V84 H360 L498 360 L360 360"
+            <polyline
+              points={`${pathPoints} ${boardCells[0]?.x ?? 0},${boardCells[0]?.y ?? 0}`}
               fill="none"
               stroke="white"
               strokeLinecap="round"
@@ -68,11 +84,11 @@ export function Board() {
           </svg>
 
           {boardCells.map((cell) => (
-            <Cell key={cell.index} cell={cell} />
+            <Cell key={cell.index} cell={cell} finishIndex={finishIndex} cellSize={cellSize} />
           ))}
 
           {teams.map((team) => {
-            const target = getPawnTarget(team, teams);
+            const target = getPawnTarget(team, teams, boardCells);
 
             return <Pawn key={team.id} team={team} x={target.x} y={target.y} />;
           })}
@@ -81,4 +97,3 @@ export function Board() {
     </section>
   );
 }
-

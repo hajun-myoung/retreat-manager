@@ -1,6 +1,8 @@
 "use client";
 
 import { DicePanel } from "@/src/components/DicePanel";
+import { GameSettingsPanel } from "@/src/components/GameSettingsPanel";
+import { MiniGameRoulette } from "@/src/components/MiniGameRoulette";
 import { TeamStatusPanel } from "@/src/components/TeamStatusPanel";
 import { WinnerSelector } from "@/src/components/WinnerSelector";
 import { useGameStore } from "@/src/stores/gameStore";
@@ -18,29 +20,41 @@ export function RoundControlPanel() {
   const phase = useGameStore((state) => state.phase);
   const isBurstActive = useGameStore((state) => state.isBurstActive);
   const burstMultiplier = useGameStore((state) => state.burstMultiplier);
-  const rollDiceForAllTeams = useGameStore((state) => state.rollDiceForAllTeams);
+  const rollDiceForAllTeams = useGameStore(
+    (state) => state.rollDiceForAllTeams,
+  );
   const resolveRound = useGameStore((state) => state.resolveRound);
   const resetGame = useGameStore((state) => state.resetGame);
   const canRoll = phase === "idle" || phase === "resolved";
   const canResolve = phase === "selectingWinners";
 
   return (
-    <aside className="flex max-h-[calc(100vh-48px)] w-full flex-col gap-4 overflow-auto rounded-[28px] border border-white/14 bg-slate-900/88 p-5 shadow-2xl lg:w-[430px]">
+    <aside className="flex max-h-[calc(100vh-48px)] w-full flex-col gap-4 overflow-auto rounded-[28px] border border-white/14 bg-slate-900/88 p-5 shadow-2xl lg:w-[470px]">
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-2xl bg-cyan-300 p-4 text-slate-950">
-          <p className="text-xs font-black uppercase tracking-[0.18em]">Round</p>
+          <p className="text-xs font-black uppercase tracking-[0.18em]">
+            Round
+          </p>
           <p className="text-4xl font-black">{round}</p>
         </div>
         <div className="col-span-2 rounded-2xl bg-white/[0.08] p-4">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-300">Phase</p>
-          <p className="mt-1 text-2xl font-black text-white">{phaseLabels[phase]}</p>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-300">
+            Phase
+          </p>
+          <p className="mt-1 text-2xl font-black text-white">
+            {phaseLabels[phase]}
+          </p>
         </div>
       </div>
 
-      <div className={`rounded-2xl border p-4 ${isBurstActive ? "border-amber-300 bg-amber-300/20" : "border-white/10 bg-white/[0.05]"}`}>
-        <p className="text-sm font-bold text-slate-200">버스트 상태</p>
+      <div
+        className={`rounded-2xl border p-4 ${isBurstActive ? "border-amber-300 bg-amber-300/20" : "border-white/10 bg-white/[0.05]"}`}
+      >
+        <p className="text-sm font-bold text-slate-200">버스트 모드</p>
         <p className="mt-1 text-2xl font-black text-white">
-          {isBurstActive ? `발동 중 · 다음 주사위 ×${burstMultiplier}` : "대기 중 · 기본 배수 ×1"}
+          {isBurstActive
+            ? `발동 중 · 다음 주사위 ×${burstMultiplier}`
+            : "대기 중 · 기본 배수 ×1"}
         </p>
       </div>
 
@@ -63,6 +77,8 @@ export function RoundControlPanel() {
         </button>
       </div>
 
+      <GameSettingsPanel />
+      <MiniGameRoulette />
       <DicePanel />
       <WinnerSelector />
 
@@ -78,4 +94,3 @@ export function RoundControlPanel() {
     </aside>
   );
 }
-

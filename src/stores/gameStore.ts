@@ -3,11 +3,18 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { shouldActivateBurst } from "@/src/lib/burst";
-import { FINISH_CELL, START_CELL, clampBoardPosition } from "@/src/lib/board";
+import {
+  DEFAULT_BOARD_CELL_COUNT,
+  START_CELL,
+  clampBoardCellCount,
+  clampBoardPosition,
+  getFinishCellIndex,
+} from "@/src/lib/board";
 import { rollD4 } from "@/src/lib/dice";
+import { miniGames } from "@/src/lib/miniGames";
 import { movePosition } from "@/src/lib/movement";
 import { GAME_STORAGE_KEY } from "@/src/lib/storage";
-import type { GameState, GameStore, Team } from "@/src/types/game";
+import type { BoardShape, GameState, GameStore, Team } from "@/src/types/game";
 
 const teamColors = [
   "#ff4d6d",
@@ -18,13 +25,44 @@ const teamColors = [
   "#b8f35a",
   "#f77f00",
   "#9b5de5",
+  "#00f5d4",
+  "#f15bb5",
+  "#fee440",
+  "#00bbf9",
 ];
 
-function createInitialTeams(): Team[] {
-  return teamColors.map((color, index) => ({
+const DEFAULT_TEAM_COUNT = 8;
+const MIN_TEAM_COUNT = 2;
+const MAX_TEAM_COUNT = 12;
+const DEFAULT_BOARD_SHAPE: BoardShape = "square";
+
+function clampTeamCount(count: number) {
+  if (Number.isNaN(count)) {
+    return DEFAULT_TEAM_COUNT;
+  }
+
+  return Math.max(MIN_TEAM_COUNT, Math.min(MAX_TEAM_COUNT, Math.round(count)));
+}
+
+function createTeam(index: number): Team {
+  return {
     id: `team-${index + 1}`,
     name: `${index + 1}팀`,
-    color,
+    color: teamColors[index % teamColors.length],
+    position: START_CELL,
+    previousPosition: START_CELL,
+    diceValue: null,
+    hasFinished: false,
+  };
+}
+
+function createInitialTeams(count = DEFAULT_TEAM_COUNT): Team[] {
+  return Array.from({ length: clampTeamCount(count) }, (_, index) => createTeam(index));
+}
+
+function resetTeamsForNewGame(teams: Team[]): Team[] {
+  return teams.map((team) => ({
+    ...team,
     position: START_CELL,
     previousPosition: START_CELL,
     diceValue: null,
@@ -34,12 +72,17 @@ function createInitialTeams(): Team[] {
 
 const initialState: GameState = {
   teams: createInitialTeams(),
+  miniGames,
   round: 1,
   phase: "idle",
   burstMultiplier: 1,
   isBurstActive: false,
   selectedWinnerIds: [],
   lastDiceResults: {},
+  selectedMiniGameId: miniGames[0]?.id ?? null,
+  isRouletteRolling: false,
+  boardCellCount: DEFAULT_BOARD_CELL_COUNT,
+  boardShape: DEFAULT_BOARD_SHAPE,
 };
 
 export const useGameStore = create<GameStore>()(
@@ -47,7 +90,7 @@ export const useGameStore = create<GameStore>()(
     (set, get) => ({
       ...initialState,
       rollDiceForAllTeams: () => {
-        const { phase, teams, isBurstActive, burstMultiplier } = get();
+        const { phase, teams, isBurstActive, burstMultiplier, boardCellCount } = get();
 
         if (phase !== "idle" && phase !== "resolved") {
           return;
@@ -63,7 +106,7 @@ export const useGameStore = create<GameStore>()(
             ...team,
             previousPosition: team.position,
             diceValue: diceResult,
-            position: movePosition(team.position, diceResult),
+            position: movePosition(team.position, diceResult, boardCellCount),
           };
         });
 
@@ -85,7 +128,8 @@ export const useGameStore = create<GameStore>()(
         });
       },
       resolveRound: () => {
-        const { selectedWinnerIds, teams, round } = get();
+        const { selectedWinnerIds, teams, round, boardCellCount } = get();
+        const finishCell = getFinishCellIndex(boardCellCount);
         const resolvedTeams = teams.map((team) => {
           const isWinner = selectedWinnerIds.includes(team.id);
           const position = isWinner ? team.position : team.previousPosition;
@@ -93,10 +137,10 @@ export const useGameStore = create<GameStore>()(
           return {
             ...team,
             position,
-            hasFinished: position === FINISH_CELL || team.hasFinished,
+            hasFinished: position === finishCell,
           };
         });
-        const isBurstActive = shouldActivateBurst(resolvedTeams);
+        const isBurstActive = shouldActivateBurst(resolvedTeams, boardCellCount);
 
         set({
           teams: resolvedTeams,
@@ -108,24 +152,32 @@ export const useGameStore = create<GameStore>()(
         });
       },
       resetGame: () => {
+        const { teams, boardCellCount, boardShape, selectedMiniGameId } = get();
+
         set({
           ...initialState,
-          teams: createInitialTeams(),
+          teams: resetTeamsForNewGame(teams),
+          miniGames,
+          boardCellCount,
+          boardShape,
+          selectedMiniGameId,
         });
       },
       manuallySetTeamPosition: (teamId, position) => {
-        const nextPosition = clampBoardPosition(position);
+        const { boardCellCount } = get();
+        const finishCell = getFinishCellIndex(boardCellCount);
+        const nextPosition = clampBoardPosition(position, boardCellCount);
         const teams = get().teams.map((team) =>
           team.id === teamId
             ? {
                 ...team,
                 position: nextPosition,
                 previousPosition: nextPosition,
-                hasFinished: nextPosition === FINISH_CELL,
+                hasFinished: nextPosition === finishCell,
               }
             : team,
         );
-        const isBurstActive = shouldActivateBurst(teams);
+        const isBurstActive = shouldActivateBurst(teams, boardCellCount);
 
         set({
           teams,
@@ -133,20 +185,134 @@ export const useGameStore = create<GameStore>()(
           burstMultiplier: isBurstActive ? 2 : 1,
         });
       },
+      rollMiniGame: () => {
+        const { isRouletteRolling } = get();
+
+        if (isRouletteRolling) {
+          return;
+        }
+
+        set({ isRouletteRolling: true });
+
+        window.setTimeout(() => {
+          const { miniGames: currentMiniGames } = get();
+          const selectedMiniGame = currentMiniGames[Math.floor(Math.random() * currentMiniGames.length)];
+
+          set({
+            selectedMiniGameId: selectedMiniGame?.id ?? null,
+            isRouletteRolling: false,
+          });
+        }, 1500);
+      },
+      setSelectedMiniGame: (miniGameId) => {
+        const exists = get().miniGames.some((miniGame) => miniGame.id === miniGameId);
+
+        if (!exists) {
+          return;
+        }
+
+        set({
+          selectedMiniGameId: miniGameId,
+          isRouletteRolling: false,
+        });
+      },
+      setBoardCellCount: (count) => {
+        const nextCellCount = clampBoardCellCount(count);
+        const { boardCellCount, teams } = get();
+
+        if (nextCellCount === boardCellCount) {
+          return;
+        }
+
+        const confirmed = window.confirm(
+          `보드 칸 수를 ${boardCellCount}칸에서 ${nextCellCount}칸으로 변경할까요? 팀 위치가 새 도착점 범위에 맞게 보정됩니다.`,
+        );
+
+        if (!confirmed) {
+          return;
+        }
+
+        const finishCell = getFinishCellIndex(nextCellCount);
+        const adjustedTeams = teams.map((team) => {
+          const position = clampBoardPosition(team.position, nextCellCount);
+          const previousPosition = clampBoardPosition(team.previousPosition, nextCellCount);
+
+          return {
+            ...team,
+            position,
+            previousPosition,
+            hasFinished: position === finishCell,
+          };
+        });
+        const isBurstActive = shouldActivateBurst(adjustedTeams, nextCellCount);
+
+        set({
+          boardCellCount: nextCellCount,
+          teams: adjustedTeams,
+          isBurstActive,
+          burstMultiplier: isBurstActive ? 2 : 1,
+        });
+      },
+      setBoardShape: (shape) => {
+        set({ boardShape: shape });
+      },
+      setTeamCount: (count) => {
+        const nextTeamCount = clampTeamCount(count);
+        const { teams, selectedWinnerIds } = get();
+        const nextTeams =
+          nextTeamCount <= teams.length
+            ? teams.slice(0, nextTeamCount)
+            : [
+                ...teams,
+                ...Array.from({ length: nextTeamCount - teams.length }, (_, index) =>
+                  createTeam(teams.length + index),
+                ),
+              ];
+        const nextTeamIds = new Set(nextTeams.map((team) => team.id));
+
+        set({
+          teams: nextTeams,
+          selectedWinnerIds: selectedWinnerIds.filter((teamId) => nextTeamIds.has(teamId)),
+        });
+      },
+      updateTeamName: (teamId, name) => {
+        const safeName = name.trimStart();
+
+        set({
+          teams: get().teams.map((team) =>
+            team.id === teamId
+              ? {
+                  ...team,
+                  name: safeName,
+                }
+              : team,
+          ),
+        });
+      },
     }),
     {
       name: GAME_STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...(persistedState as Partial<GameState>),
+        miniGames,
+        isRouletteRolling: false,
+      }),
       partialize: (state) => ({
         teams: state.teams,
+        miniGames: state.miniGames,
         round: state.round,
         phase: state.phase,
         burstMultiplier: state.burstMultiplier,
         isBurstActive: state.isBurstActive,
         selectedWinnerIds: state.selectedWinnerIds,
         lastDiceResults: state.lastDiceResults,
+        selectedMiniGameId: state.selectedMiniGameId,
+        isRouletteRolling: state.isRouletteRolling,
+        boardCellCount: state.boardCellCount,
+        boardShape: state.boardShape,
       }),
     },
   ),
 );
-

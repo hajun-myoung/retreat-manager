@@ -25,7 +25,7 @@ const COPY_WARNING = "[WARNING] 복붙으로 알아내려고 한 당신, 참 치
 const INITIAL_LOG_LINES: LogLine[] = [
   {
     id: "boot",
-    text: "[BOOT] TREASURE_HINT_TERMINAL v1.0",
+    text: "[BOOT] TREASURE_HINT_TERMINAL v1.2.1",
     tone: "success",
   },
   {
@@ -34,6 +34,12 @@ const INITIAL_LOG_LINES: LogLine[] = [
     tone: "muted",
   },
 ];
+
+function logTreasureApp(message: string, detail?: unknown) {
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[treasure_hunt] ${message}`, detail ?? "");
+  }
+}
 
 function createLogLine(text: string, tone?: LogLine["tone"]): LogLine {
   return {
@@ -75,7 +81,9 @@ function readStoredHints() {
 
 export function TerminalTreasureApp({ totalHints }: TerminalTreasureAppProps) {
   const [code, setCode] = useState("");
-  const [unlockedHints, setUnlockedHints] = useState<UnlockedTreasureHint[]>([]);
+  const [unlockedHints, setUnlockedHints] = useState<UnlockedTreasureHint[]>(
+    [],
+  );
   const [logLines, setLogLines] = useState<LogLine[]>(INITIAL_LOG_LINES);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const logEndRef = useRef<HTMLDivElement | null>(null);
@@ -85,6 +93,12 @@ export function TerminalTreasureApp({ totalHints }: TerminalTreasureAppProps) {
     () => new Set(unlockedHints.map((hint) => hint.id)),
     [unlockedHints],
   );
+
+  useEffect(() => {
+    logTreasureApp("Mounted: TerminalTreasureApp");
+
+    return () => logTreasureApp("Unmounted: TerminalTreasureApp");
+  }, []);
 
   useEffect(() => {
     window.setTimeout(() => {
@@ -117,17 +131,31 @@ export function TerminalTreasureApp({ totalHints }: TerminalTreasureAppProps) {
     const normalizedCode = code.trim().toUpperCase();
 
     if (!normalizedCode || isSubmitting) {
+      logTreasureApp("submit ignored: TerminalTreasureApp", {
+        hasCode: Boolean(normalizedCode),
+        isSubmitting,
+      });
       return;
     }
 
+    logTreasureApp("submit started: TerminalTreasureApp", {
+      codeLength: normalizedCode.length,
+    });
     setIsSubmitting(true);
     appendLogs([createLogLine(`> unlock --code ${normalizedCode}`, "normal")]);
 
     try {
+      logTreasureApp("verify request started", {
+        endpoint: "/api/treasure_hunt/verify",
+      });
       const response = await fetch("/api/treasure_hunt/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: normalizedCode }),
+      });
+      logTreasureApp("verify request finished", {
+        ok: response.ok,
+        status: response.status,
       });
       const data = (await response.json()) as
         | { ok: true; hint: PublicTreasureHint }
@@ -170,10 +198,12 @@ export function TerminalTreasureApp({ totalHints }: TerminalTreasureAppProps) {
         ]);
       }, 360);
     } catch {
+      logTreasureApp("verify request failed");
       appendLogs([createLogLine("[NETWORK ERROR] RETRY REQUIRED", "error")]);
     } finally {
       setCode("");
       setIsSubmitting(false);
+      logTreasureApp("submit finished: TerminalTreasureApp");
     }
   }
 

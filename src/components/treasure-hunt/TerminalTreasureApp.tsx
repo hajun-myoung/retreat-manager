@@ -22,6 +22,18 @@ type LogLine = {
 
 const STORAGE_KEY = "treasure-hunt-unlocked-hints";
 const COPY_WARNING = "[WARNING] 복붙으로 알아내려고 한 당신, 참 치사하군요.";
+const INITIAL_LOG_LINES: LogLine[] = [
+  {
+    id: "boot",
+    text: "[BOOT] TREASURE_HINT_TERMINAL v1.0",
+    tone: "success",
+  },
+  {
+    id: "ready",
+    text: "[READY] 획득한 코드를 입력하십시오.",
+    tone: "muted",
+  },
+];
 
 function createLogLine(text: string, tone?: LogLine["tone"]): LogLine {
   return {
@@ -63,15 +75,11 @@ function readStoredHints() {
 
 export function TerminalTreasureApp({ totalHints }: TerminalTreasureAppProps) {
   const [code, setCode] = useState("");
-  const [unlockedHints, setUnlockedHints] = useState<UnlockedTreasureHint[]>(
-    () => readStoredHints(),
-  );
-  const [logLines, setLogLines] = useState<LogLine[]>([
-    createLogLine("[BOOT] TREASURE_HINT_TERMINAL v1.0", "success"),
-    createLogLine("[READY] 획득한 코드를 입력하십시오.", "muted"),
-  ]);
+  const [unlockedHints, setUnlockedHints] = useState<UnlockedTreasureHint[]>([]);
+  const [logLines, setLogLines] = useState<LogLine[]>(INITIAL_LOG_LINES);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const logEndRef = useRef<HTMLDivElement | null>(null);
+  const hasLoadedStoredHintsRef = useRef(false);
 
   const unlockedIds = useMemo(
     () => new Set(unlockedHints.map((hint) => hint.id)),
@@ -79,6 +87,17 @@ export function TerminalTreasureApp({ totalHints }: TerminalTreasureAppProps) {
   );
 
   useEffect(() => {
+    window.setTimeout(() => {
+      hasLoadedStoredHintsRef.current = true;
+      setUnlockedHints(readStoredHints());
+    }, 0);
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedStoredHintsRef.current) {
+      return;
+    }
+
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(unlockedHints));
   }, [unlockedHints]);
 

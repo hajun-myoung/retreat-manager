@@ -62,21 +62,21 @@ export const miniGames: MiniGame[] = [
     description: "K-POP 노래를 듣고 누구보다 빨리 가수-곡제목을 말하세요",
   },
   {
-    id: "kim-heechul-game",
+    id: "kim-heechul-ccm-00s",
     name: "김희철 게임(CCM, ~00s)",
     type: "ranked",
     description:
       "2000년 이전 CCM을 듣고 누구보다 빨리 찬양팀-곡제목을 말하세요",
   },
   {
-    id: "kim-heechul-game",
+    id: "kim-heechul-ccm-10s",
     name: "김희철 게임(CCM, ~10s)",
     type: "ranked",
     description:
       "2010년 이전 CCM을 듣고 누구보다 빨리 찬양팀-곡제목을 말하세요",
   },
   {
-    id: "kim-heechul-game",
+    id: "kim-heechul-ccm-recent",
     name: "김희철 게임(CCM, 최근)",
     type: "ranked",
     description: "최근 CCM을 듣고 누구보다 빨리 찬양팀-곡제목을 말하세요",

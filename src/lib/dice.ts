@@ -1,13 +1,11 @@
 export const MIN_DICE_VALUE = 1;
-export const MAX_DICE_VALUE = 6;
+export const MAX_DICE_VALUE = 4;
 
 export const DICE_WEIGHTS = [
   { value: 1, weight: 14 },
   { value: 2, weight: 15 },
   { value: 3, weight: 16 },
   { value: 4, weight: 17 },
-  { value: 5, weight: 18 },
-  { value: 6, weight: 20 },
 ] as const;
 
 export function rollWeightedDice() {

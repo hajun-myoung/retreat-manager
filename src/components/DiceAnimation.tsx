@@ -18,25 +18,10 @@ const diceDots: Record<number, Array<string>> = {
     "col-start-1 row-start-3",
     "col-start-3 row-start-3",
   ],
-  5: [
-    "col-start-1 row-start-1",
-    "col-start-3 row-start-1",
-    "col-start-2 row-start-2",
-    "col-start-1 row-start-3",
-    "col-start-3 row-start-3",
-  ],
-  6: [
-    "col-start-1 row-start-1",
-    "col-start-3 row-start-1",
-    "col-start-1 row-start-2",
-    "col-start-3 row-start-2",
-    "col-start-1 row-start-3",
-    "col-start-3 row-start-3",
-  ],
 };
 
 export function DiceAnimation({ value, rolling, size = 74 }: DiceAnimationProps) {
-  const safeValue = Math.max(1, Math.min(6, Math.round(value || 1)));
+  const safeValue = Math.max(1, Math.min(4, Math.round(value || 1)));
   const dots = diceDots[safeValue] ?? diceDots[1];
 
   return (

@@ -130,15 +130,50 @@ function addFinishRecordsForRound({
   return nextRecords;
 }
 
-function normalizeFinishRecordsForTeams(records: FinishRecord[], teams: Team[], round: number) {
-  const teamIds = new Set(teams.map((team) => team.id));
-  const nextRecords = records
-    .filter((record) => teamIds.has(record.teamId))
+function areAllTeamsFinished(teams: Team[]) {
+  return teams.length > 0 && teams.every((team) => team.hasFinished);
+}
+
+function getSettledPhaseForTeams(phase: GameState["phase"], teams: Team[]) {
+  if (areAllTeamsFinished(teams)) {
+    return "completed";
+  }
+
+  if (phase === "completed") {
+    return "resolved";
+  }
+
+  return phase;
+}
+
+function reconcileFinishRecordsForTeams(records: FinishRecord[], teams: Team[], round: number) {
+  const teamsById = new Map(teams.map((team) => [team.id, team]));
+  const recordedTeamIds = new Set<string>();
+  const nextRecords: FinishRecord[] = records
+    .filter((record) => {
+      const team = teamsById.get(record.teamId);
+
+      return Boolean(team?.hasFinished);
+    })
     .map((record, index) => ({
       ...record,
+      type: "finished" as const,
       rank: index + 1,
     }));
-  const recordedTeamIds = new Set(nextRecords.map((record) => record.teamId));
+
+  nextRecords.forEach((record) => recordedTeamIds.add(record.teamId));
+
+  teams.forEach((team) => {
+    if (team.hasFinished && !recordedTeamIds.has(team.id)) {
+      nextRecords.push({
+        teamId: team.id,
+        rank: nextRecords.length + 1,
+        round,
+        type: "finished",
+      });
+      recordedTeamIds.add(team.id);
+    }
+  });
 
   if (teams.length > 1 && nextRecords.length === teams.length - 1) {
     const lastTeam = teams.find((team) => !recordedTeamIds.has(team.id));
@@ -166,18 +201,31 @@ function normalizeDiceResults(
   return Object.fromEntries(
     Object.entries(results).map(([teamId, result]) => {
       if (typeof result === "number") {
+        const baseValue = Math.max(1, Math.min(4, Math.round(result)));
+
         return [
           teamId,
           {
             teamId,
-            baseValue: result,
+            baseValue,
             multiplier: 1,
-            finalValue: result,
+            finalValue: baseValue,
           } satisfies DiceRollResult,
         ];
       }
 
-      return [teamId, result];
+      const multiplier = result.multiplier === 2 ? 2 : 1;
+      const baseValue = Math.max(1, Math.min(4, Math.round(result.baseValue)));
+
+      return [
+        teamId,
+        {
+          ...result,
+          baseValue,
+          multiplier,
+          finalValue: baseValue * multiplier,
+        } satisfies DiceRollResult,
+      ];
     }),
   );
 }
@@ -213,13 +261,28 @@ export const useGameStore = create<GameStore>()(
           return;
         }
 
+        const activeTeams = teams.filter((team) => !team.hasFinished);
+
+        if (activeTeams.length === 0) {
+          set({ phase: "completed" });
+          return;
+        }
+
         set({ phase: "rolling" });
 
         const burstFields = getBurstFields(teams, boardCellCount, isManualBurstEnabled);
         const { isBurstActive } = burstFields;
         const appliedMultiplier = isBurstActive ? 2 : 1;
+        const activeTeamIds = new Set(activeTeams.map((team) => team.id));
         const lastDiceResults: Record<string, DiceRollResult> = {};
         const movedTeams = teams.map((team) => {
+          if (!activeTeamIds.has(team.id)) {
+            return {
+              ...team,
+              diceValue: null,
+            };
+          }
+
           const baseValue = rollWeightedDice();
           const diceResult = baseValue * appliedMultiplier;
           lastDiceResults[team.id] = {
@@ -252,9 +315,13 @@ export const useGameStore = create<GameStore>()(
         }, DICE_ROLLING_DURATION_MS);
       },
       toggleWinner: (teamId) => {
-        const { selectedWinnerIds, phase, isDiceOverlayVisible, isDiceRolling } = get();
+        const { selectedWinnerIds, phase, isDiceOverlayVisible, isDiceRolling, lastDiceResults } = get();
 
         if (isDiceRolling || (phase !== "awaitingMiniGame" && !isDiceOverlayVisible)) {
+          return;
+        }
+
+        if (!lastDiceResults[teamId]) {
           return;
         }
 
@@ -276,6 +343,7 @@ export const useGameStore = create<GameStore>()(
           phase,
           finishRecords,
           isDiceRolling,
+          lastDiceResults,
         } = get();
 
         if (phase !== "awaitingMiniGame" || isDiceRolling) {
@@ -285,7 +353,12 @@ export const useGameStore = create<GameStore>()(
         set({ phase: "resolving" });
 
         const finishCell = getFinishCellIndex(boardCellCount);
+        const currentRollTeamIds = new Set(Object.keys(lastDiceResults));
         const resolvedTeams = teams.map((team) => {
+          if (!currentRollTeamIds.has(team.id)) {
+            return team;
+          }
+
           const isWinner = selectedWinnerIds.includes(team.id);
           const position = isWinner ? team.position : team.previousPosition;
 
@@ -308,7 +381,7 @@ export const useGameStore = create<GameStore>()(
           teams: resolvedTeams,
           finishRecords: nextFinishRecords,
           round: round + 1,
-          phase: "resolved",
+          phase: getSettledPhaseForTeams("resolved", resolvedTeams),
           ...burstFields,
           selectedWinnerIds: [],
           isDiceOverlayVisible: false,
@@ -329,7 +402,15 @@ export const useGameStore = create<GameStore>()(
         });
       },
       manuallySetTeamPosition: (teamId, position) => {
-        const { boardCellCount, isManualBurstEnabled } = get();
+        const {
+          boardCellCount,
+          isManualBurstEnabled,
+          finishRecords,
+          round,
+          phase,
+          selectedWinnerIds,
+          lastDiceResults,
+        } = get();
         const finishCell = getFinishCellIndex(boardCellCount);
         const nextPosition = clampBoardPosition(position, boardCellCount);
         const teams = get().teams.map((team) =>
@@ -343,9 +424,18 @@ export const useGameStore = create<GameStore>()(
             : team,
         );
         const burstFields = getBurstFields(teams, boardCellCount, isManualBurstEnabled);
+        const reconciledFinishRecords = reconcileFinishRecordsForTeams(finishRecords, teams, round);
+        const nextTeam = teams.find((team) => team.id === teamId);
+        const nextLastDiceResults = nextTeam?.hasFinished
+          ? Object.fromEntries(Object.entries(lastDiceResults).filter(([id]) => id !== teamId))
+          : lastDiceResults;
 
         set({
           teams,
+          phase: getSettledPhaseForTeams(phase, teams),
+          finishRecords: reconciledFinishRecords,
+          selectedWinnerIds: selectedWinnerIds.filter((id) => id !== teamId || !nextTeam?.hasFinished),
+          lastDiceResults: nextLastDiceResults,
           ...burstFields,
         });
       },
@@ -418,7 +508,7 @@ export const useGameStore = create<GameStore>()(
       },
       setBoardCellCount: (count) => {
         const nextCellCount = clampBoardCellCount(count);
-        const { boardCellCount, teams, isManualBurstEnabled } = get();
+        const { boardCellCount, teams, isManualBurstEnabled, finishRecords, round, phase } = get();
 
         if (nextCellCount === boardCellCount) {
           return;
@@ -445,10 +535,13 @@ export const useGameStore = create<GameStore>()(
           };
         });
         const burstFields = getBurstFields(adjustedTeams, nextCellCount, isManualBurstEnabled);
+        const reconciledFinishRecords = reconcileFinishRecordsForTeams(finishRecords, adjustedTeams, round);
 
         set({
           boardCellCount: nextCellCount,
           teams: adjustedTeams,
+          phase: getSettledPhaseForTeams(phase, adjustedTeams),
+          finishRecords: reconciledFinishRecords,
           ...burstFields,
         });
       },
@@ -457,7 +550,7 @@ export const useGameStore = create<GameStore>()(
       },
       setTeamCount: (count) => {
         const nextTeamCount = clampTeamCount(count);
-        const { teams, selectedWinnerIds, boardCellCount, isManualBurstEnabled, finishRecords, round } =
+        const { teams, selectedWinnerIds, boardCellCount, isManualBurstEnabled, finishRecords, round, phase } =
           get();
         const nextTeams =
           nextTeamCount <= teams.length
@@ -469,12 +562,13 @@ export const useGameStore = create<GameStore>()(
                 ),
               ];
         const nextTeamIds = new Set(nextTeams.map((team) => team.id));
-        const filteredFinishRecords = normalizeFinishRecordsForTeams(finishRecords, nextTeams, round);
+        const filteredFinishRecords = reconcileFinishRecordsForTeams(finishRecords, nextTeams, round);
 
         set({
           teams: nextTeams,
           selectedWinnerIds: selectedWinnerIds.filter((teamId) => nextTeamIds.has(teamId)),
           finishRecords: filteredFinishRecords,
+          phase: getSettledPhaseForTeams(phase, nextTeams),
           ...getBurstFields(nextTeams, boardCellCount, isManualBurstEnabled),
         });
       },
@@ -506,6 +600,16 @@ export const useGameStore = create<GameStore>()(
           (mergedState.phase as string) === "selectingWinners"
             ? "awaitingMiniGame"
             : mergedState.phase;
+        const reconciledFinishRecords = reconcileFinishRecordsForTeams(
+          mergedState.finishRecords ?? [],
+          mergedState.teams,
+          mergedState.round,
+        );
+        const selectedMiniGameId = miniGames.some(
+          (miniGame) => miniGame.id === mergedState.selectedMiniGameId,
+        )
+          ? mergedState.selectedMiniGameId
+          : miniGames[0]?.id ?? null;
 
         return {
           ...mergedState,
@@ -514,9 +618,10 @@ export const useGameStore = create<GameStore>()(
             mergedState.boardCellCount,
             Boolean(mergedState.isManualBurstEnabled),
           ),
-          phase: normalizedPhase,
-          finishRecords: mergedState.finishRecords ?? [],
+          phase: getSettledPhaseForTeams(normalizedPhase, mergedState.teams),
+          finishRecords: reconciledFinishRecords,
           lastDiceResults: normalizeDiceResults(mergedState.lastDiceResults),
+          selectedMiniGameId,
           isManualBurstEnabled: Boolean(mergedState.isManualBurstEnabled),
           isRouletteRolling: false,
           rouletteTargetMiniGameId: null,

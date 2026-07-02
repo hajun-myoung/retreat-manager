@@ -46,12 +46,17 @@ function TeamResultCard({
   const baseValue = result?.baseValue ?? 0;
   const finalValue = result?.finalValue ?? 0;
   const multiplier = result?.multiplier ?? 1;
+  const isParticipant = Boolean(result);
   const resultText =
-    multiplier === 2 && baseValue > 0
-      ? `🎲 ${baseValue} ×2 = ${finalValue}`
-      : finalValue > 0
-        ? `🎲 ${finalValue}`
-        : "결과 대기";
+    !isParticipant && team.hasFinished
+      ? "도착 완료"
+      : !isParticipant
+        ? "이번 라운드 제외"
+        : multiplier === 2 && baseValue > 0
+          ? `🎲 ${baseValue} ×2 = ${finalValue}`
+          : finalValue > 0
+            ? `🎲 ${finalValue}`
+            : "결과 대기";
 
   return (
     <motion.article
@@ -80,18 +85,22 @@ function TeamResultCard({
           }`}
           data-testid={`winner-toggle-${team.id}`}
           type="button"
-          disabled={isDiceRolling}
+          disabled={isDiceRolling || !isParticipant}
           onClick={() => onToggleWinner(team.id)}
         >
-          {isWinner ? "승리" : "선택"}
+          {isWinner ? "승리" : isParticipant ? "선택" : "완료"}
         </button>
       </header>
 
       <section className="flex min-h-[84px] items-center justify-center gap-4 rounded-2xl bg-slate-950/34 px-3 py-2">
-        <DiceAnimation value={baseValue || finalValue || 1} rolling={isDiceRolling} size={68} />
+        <DiceAnimation value={baseValue || finalValue || 1} rolling={isDiceRolling && isParticipant} size={68} />
         <div className="text-left">
-          <p className="text-5xl font-black leading-none text-white">{isDiceRolling ? "..." : finalValue || "-"}</p>
-          <p className="mt-2 min-h-5 text-sm font-black text-amber-100">{isDiceRolling ? "굴리는 중" : resultText}</p>
+          <p className="text-5xl font-black leading-none text-white">
+            {isDiceRolling && isParticipant ? "..." : finalValue || (team.hasFinished ? "완" : "-")}
+          </p>
+          <p className="mt-2 min-h-5 text-sm font-black text-amber-100">
+            {isDiceRolling && isParticipant ? "굴리는 중" : resultText}
+          </p>
         </div>
       </section>
 
@@ -111,7 +120,7 @@ function TeamResultCard({
           isWinner ? "bg-amber-300 text-slate-950" : "bg-rose-300/18 text-rose-100"
         }`}
       >
-        {isWinner ? "이동 유지" : "원위치 복귀"}
+        {!isParticipant ? "도착 상태 유지" : isWinner ? "이동 유지" : "원위치 복귀"}
       </footer>
     </motion.article>
   );

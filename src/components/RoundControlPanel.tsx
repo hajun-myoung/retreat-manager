@@ -14,6 +14,7 @@ const phaseLabels = {
   awaitingMiniGame: "미니게임 진행",
   resolving: "결과 반영 중",
   resolved: "라운드 확정",
+  completed: "게임 완료",
 } as const;
 
 export function RoundControlPanel() {
@@ -32,6 +33,7 @@ export function RoundControlPanel() {
   const resetGame = useGameStore((state) => state.resetGame);
   const canRoll = phase === "idle" || phase === "resolved";
   const canOpenOverlay = phase === "awaitingMiniGame";
+  const isCompleted = phase === "completed";
   const isAutoBurstActive = shouldActivateBurst(teams, boardCellCount);
   const burstLabel = isManualBurstEnabled
     ? "Burst ON: Manual"
@@ -87,6 +89,18 @@ export function RoundControlPanel() {
           </button>
         </div>
       </div>
+
+      {isCompleted && (
+        <div className="rounded-2xl border border-emerald-200/70 bg-emerald-300/18 p-4 text-white">
+          <p className="text-sm font-black uppercase tracking-[0.18em] text-emerald-100">
+            Complete
+          </p>
+          <p className="mt-1 text-2xl font-black">모든 팀이 도착했습니다</p>
+          <p className="mt-1 text-sm font-bold text-emerald-50">
+            게임 초기화와 관리자 위치 조정은 계속 사용할 수 있습니다.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <button

@@ -3,7 +3,7 @@ import { RoundControlPanel } from "@/src/components/RoundControlPanel";
 
 export default function Home() {
   return (
-    <main className="min-h-screen overflow-hidden bg-[#080c18] p-6 text-white">
+    <main className="min-h-screen overflow-x-hidden bg-[#080c18] p-6 text-white">
       <div className="mx-auto flex min-h-[calc(100vh-48px)] max-w-[1720px] flex-col gap-6 lg:flex-row">
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-5">
           <header className="flex flex-wrap items-end justify-between gap-3">
@@ -27,4 +27,3 @@ export default function Home() {
     </main>
   );
 }
-

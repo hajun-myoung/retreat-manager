@@ -36,7 +36,8 @@ export type GamePhase =
   | "rolling"
   | "awaitingMiniGame"
   | "resolving"
-  | "resolved";
+  | "resolved"
+  | "completed";
 
 export type GameState = {
   teams: Team[];

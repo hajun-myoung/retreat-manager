@@ -31,12 +31,14 @@ export function DicePanel() {
                 transformStyle: "preserve-3d",
               }}
             >
-              {lastDiceResults[team.id]?.finalValue ?? "-"}
+              {lastDiceResults[team.id]?.finalValue ?? (team.hasFinished ? "완" : "-")}
             </motion.div>
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-white">{team.name}</p>
               <p className="text-xs font-semibold text-slate-300">
-                {team.previousPosition} → {team.position}
+                {team.hasFinished && !lastDiceResults[team.id]
+                  ? `도착 완료 · ${team.position}번`
+                  : `${team.previousPosition} → ${team.position}`}
               </p>
             </div>
           </div>

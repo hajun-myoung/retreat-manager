@@ -30,8 +30,10 @@ export function TerminalInput({
   }, []);
 
   function handleSubmit(event?: MouseEvent<HTMLButtonElement>) {
+    console.log("1. handle submit called");
     event?.preventDefault();
     event?.stopPropagation();
+    console.log("2. preventDefaul");
 
     submitCountRef.current += 1;
     logTerminalInput("submit started: TerminalInput", {
@@ -39,8 +41,10 @@ export function TerminalInput({
       submitCount: submitCountRef.current,
       source: event?.type ?? "keyboard",
     });
+    console.log("3. loging");
 
     void onSubmit();
+    console.log("4. onsubmit called");
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {

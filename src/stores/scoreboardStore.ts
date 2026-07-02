@@ -265,6 +265,9 @@ export const useScoreboardStore = create<ScoreboardStore>()(
       setActivityTitle: (activityTitle) => {
         set({ activityTitle });
       },
+      setViewOnlyMode: (isViewOnlyMode) => {
+        set({ isViewOnlyMode });
+      },
       toggleViewOnlyMode: () => {
         set((state) => ({ isViewOnlyMode: !state.isViewOnlyMode }));
       },

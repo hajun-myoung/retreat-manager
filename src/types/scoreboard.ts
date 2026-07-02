@@ -53,6 +53,7 @@ export type ScoreboardActions = {
   updateTeamName: (teamId: string, name: string) => void;
   updateTeamColor: (teamId: string, color: string) => void;
   setActivityTitle: (activityTitle: string) => void;
+  setViewOnlyMode: (isViewOnlyMode: boolean) => void;
   toggleViewOnlyMode: () => void;
   setRevealStep: (step: number) => void;
   resetReveal: () => void;

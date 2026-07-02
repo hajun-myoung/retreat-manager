@@ -1,8 +1,15 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { getLeaderboardEntries, useScoreboardStore } from "@/src/stores/scoreboardStore";
-import type { LeaderboardEntry, ScoreRecord, ScoreboardTeam } from "@/src/types/scoreboard";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  getLeaderboardEntries,
+  useScoreboardStore,
+} from "@/src/stores/scoreboardStore";
+import type {
+  LeaderboardEntry,
+  ScoreRecord,
+  ScoreboardTeam,
+} from "@/src/types/scoreboard";
 
 const MAX_REVEAL_STEP = 4;
 
@@ -27,34 +34,32 @@ function getTeamColor(teamId: string, teams: ScoreboardTeam[]) {
   return teams.find((team) => team.id === teamId)?.color ?? "#64748b";
 }
 
-function getVisibleRevealEntries(entries: LeaderboardEntry[], revealStep: number) {
-  if (revealStep === 0) {
-    return new Set<string>();
-  }
-
-  if (revealStep === 1) {
-    return new Set(entries.filter((entry) => entry.rank === 3).map((entry) => entry.team.id));
-  }
-
-  if (revealStep === 2) {
-    return new Set(entries.filter((entry) => entry.rank === 2).map((entry) => entry.team.id));
-  }
-
+function getVisibleRevealEntries(
+  entries: LeaderboardEntry[],
+  revealStep: number,
+) {
+  const visibleTeamIds = new Set<string>();
   const lastRank = Math.max(...entries.map((entry) => entry.rank), 0);
 
-  if (revealStep === 3) {
-    return new Set(
-      entries
-        .filter((entry) => entry.rank >= 4 && entry.rank < lastRank)
-        .map((entry) => entry.team.id),
-    );
-  }
+  entries.forEach((entry) => {
+    if (revealStep >= 1 && entry.rank === 3) {
+      visibleTeamIds.add(entry.team.id);
+    }
 
-  return new Set(
-    entries
-      .filter((entry) => entry.rank === 1 || entry.rank === lastRank)
-      .map((entry) => entry.team.id),
-  );
+    if (revealStep >= 2 && entry.rank === 2) {
+      visibleTeamIds.add(entry.team.id);
+    }
+
+    if (revealStep >= 3 && entry.rank >= 4 && entry.rank < lastRank) {
+      visibleTeamIds.add(entry.team.id);
+    }
+
+    if (revealStep >= 4 && (entry.rank === 1 || entry.rank === lastRank)) {
+      visibleTeamIds.add(entry.team.id);
+    }
+  });
+
+  return visibleTeamIds;
 }
 
 function getRevealStepTitle(revealStep: number) {
@@ -85,11 +90,17 @@ function LeaderboardPanel({ entries }: { entries: LeaderboardEntry[] }) {
           <p className="text-sm font-black uppercase tracking-[0.24em] text-cyan-200">
             Retreat Scoreboard
           </p>
-          <h1 className="mt-2 text-4xl font-black text-white xl:text-6xl">종합 점수판</h1>
+          <h1 className="mt-2 text-4xl font-black text-white xl:text-6xl">
+            종합 점수판
+          </h1>
         </div>
         <div className="rounded-2xl border border-white/14 bg-white/[0.07] px-5 py-3 text-right">
-          <p className="text-sm font-bold text-slate-300">동점은 공동 순위로 표시</p>
-          <p className="text-lg font-black text-amber-200">총점 높은 순 · 등록 순 안정 정렬</p>
+          <p className="text-sm font-bold text-slate-300">
+            동점은 공동 순위로 표시
+          </p>
+          <p className="text-lg font-black text-amber-200">
+            총점 높은 순 · 등록 순 안정 정렬
+          </p>
         </div>
       </div>
 
@@ -107,7 +118,9 @@ function LeaderboardPanel({ entries }: { entries: LeaderboardEntry[] }) {
               }`}
             >
               <div className="text-center">
-                <p className={`text-4xl font-black ${isTop ? "text-amber-200" : "text-slate-300"}`}>
+                <p
+                  className={`text-4xl font-black ${isTop ? "text-amber-200" : "text-slate-300"}`}
+                >
                   {entry.rank}
                 </p>
                 {index > 0 && entry.rank === entries[index - 1].rank && (
@@ -120,14 +133,18 @@ function LeaderboardPanel({ entries }: { entries: LeaderboardEntry[] }) {
                     className="h-5 w-5 shrink-0 rounded-full border border-white/50"
                     style={{ backgroundColor: entry.team.color }}
                   />
-                  <h2 className="truncate text-2xl font-black text-white">{entry.team.name}</h2>
+                  <h2 className="truncate text-2xl font-black text-white">
+                    {entry.team.name}
+                  </h2>
                 </div>
                 <p className="mt-1 text-sm font-bold text-slate-300">
                   {entry.scoreCount}개 기록 합산
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-4xl font-black text-white">{entry.totalScore}</p>
+                <p className="text-4xl font-black text-white">
+                  {entry.totalScore}
+                </p>
                 <p className="text-sm font-black text-cyan-100">points</p>
               </div>
             </article>
@@ -162,10 +179,14 @@ function BatchScoreEntryPanel({
 }: {
   teams: ScoreboardTeam[];
   activityTitle: string;
-  onSubmit: (records: Array<{ teamId: string; points: number; note: string }>) => void;
+  onSubmit: (
+    records: Array<{ teamId: string; points: number; note: string }>,
+  ) => void;
   onActivityTitleChange: (activityTitle: string) => void;
 }) {
-  const [pointsByTeamId, setPointsByTeamId] = useState<Record<string, string>>({});
+  const [pointsByTeamId, setPointsByTeamId] = useState<Record<string, string>>(
+    {},
+  );
   const [errorMessage, setErrorMessage] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -189,10 +210,14 @@ function BatchScoreEntryPanel({
       return;
     }
 
-    const invalidTeam = filledRows.find((row) => Number.isNaN(parseScoreValue(row.rawPoints)));
+    const invalidTeam = filledRows.find((row) =>
+      Number.isNaN(parseScoreValue(row.rawPoints)),
+    );
 
     if (invalidTeam) {
-      const teamName = teams.find((team) => team.id === invalidTeam.teamId)?.name ?? "선택한 팀";
+      const teamName =
+        teams.find((team) => team.id === invalidTeam.teamId)?.name ??
+        "선택한 팀";
       setErrorMessage(`${teamName} 점수가 올바른 숫자가 아닙니다.`);
       return;
     }
@@ -213,7 +238,8 @@ function BatchScoreEntryPanel({
       <div className="mb-3">
         <h2 className="text-lg font-black text-white">활동 점수 일괄 입력</h2>
         <p className="mt-1 text-xs font-bold leading-5 text-slate-300">
-          여러 팀 점수를 한 번에 입력합니다. 빈 칸은 건너뛰고, 제출 후 활동 제목은 유지됩니다.
+          여러 팀 점수를 한 번에 입력합니다. 빈 칸은 건너뛰고, 제출 후 활동
+          제목은 유지됩니다.
         </p>
       </div>
       <form className="space-y-3" onSubmit={handleSubmit}>
@@ -239,7 +265,9 @@ function BatchScoreEntryPanel({
                   className="h-4 w-4 shrink-0 rounded-full border border-white/40"
                   style={{ backgroundColor: team.color }}
                 />
-                <span className="truncate text-sm font-black text-white">{team.name}</span>
+                <span className="truncate text-sm font-black text-white">
+                  {team.name}
+                </span>
               </span>
               <input
                 aria-label={`${team.name} activity points`}
@@ -282,14 +310,21 @@ function ExtraScorePanel({
   onSubmit,
 }: {
   teams: ScoreboardTeam[];
-  onSubmit: (input: { teamId: string; points: number; activityTitle: string; note: string }) => void;
+  onSubmit: (input: {
+    teamId: string;
+    points: number;
+    activityTitle: string;
+    note: string;
+  }) => void;
 }) {
   const [teamId, setTeamId] = useState(teams[0]?.id ?? "");
   const [activityTitle, setActivityTitle] = useState("Bonus/Penalty");
   const [points, setPoints] = useState("");
   const [note, setNote] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const safeTeamId = teams.some((team) => team.id === teamId) ? teamId : teams[0]?.id ?? "";
+  const safeTeamId = teams.some((team) => team.id === teamId)
+    ? teamId
+    : (teams[0]?.id ?? "");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -301,7 +336,11 @@ function ExtraScorePanel({
 
     const parsedPoints = parseScoreValue(points);
 
-    if (points.trim() === "" || parsedPoints === null || Number.isNaN(parsedPoints)) {
+    if (
+      points.trim() === "" ||
+      parsedPoints === null ||
+      Number.isNaN(parsedPoints)
+    ) {
       setErrorMessage("점수를 올바른 숫자로 입력해 주세요.");
       return;
     }
@@ -446,7 +485,9 @@ function TeamManagementPanel({
             min={0}
             max={40}
             value={pendingTeamCount}
-            onChange={(event) => setPendingTeamCount(Number(event.target.value))}
+            onChange={(event) =>
+              setPendingTeamCount(Number(event.target.value))
+            }
           />
         </label>
         <button
@@ -460,18 +501,25 @@ function TeamManagementPanel({
 
       <div className="space-y-2">
         {teams.map((team) => (
-          <div key={team.id} className="grid grid-cols-[44px_1fr_auto] items-center gap-2 rounded-xl bg-slate-950/45 p-3">
+          <div
+            key={team.id}
+            className="grid grid-cols-[44px_1fr_auto] items-center gap-2 rounded-xl bg-slate-950/45 p-3"
+          >
             <input
               aria-label={`${team.name} color`}
               className="h-10 w-10 rounded-lg border border-white/20 bg-transparent"
               type="color"
               value={team.color}
-              onChange={(event) => onUpdateTeamColor(team.id, event.target.value)}
+              onChange={(event) =>
+                onUpdateTeamColor(team.id, event.target.value)
+              }
             />
             <input
               className="h-10 min-w-0 rounded-lg border border-white/10 bg-white/8 px-3 text-sm font-black text-white outline-none focus:border-cyan-300"
               value={team.name}
-              onChange={(event) => onUpdateTeamName(team.id, event.target.value)}
+              onChange={(event) =>
+                onUpdateTeamName(team.id, event.target.value)
+              }
             />
             <button
               className="h-10 rounded-lg border border-rose-300/60 px-3 text-xs font-black text-rose-100 transition hover:bg-rose-500/20"
@@ -510,12 +558,17 @@ function ScoreHistoryPanel({
 
       <div className="max-h-[430px] space-y-2 overflow-auto pr-1">
         {records.map((record) => (
-          <article key={record.id} className="grid grid-cols-[1fr_auto] gap-3 rounded-2xl bg-white/[0.06] p-3">
+          <article
+            key={record.id}
+            className="grid grid-cols-[1fr_auto] gap-3 rounded-2xl bg-white/[0.06] p-3"
+          >
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-2">
                 <span
                   className="h-3 w-3 shrink-0 rounded-full"
-                  style={{ backgroundColor: getTeamColor(record.teamId, teams) }}
+                  style={{
+                    backgroundColor: getTeamColor(record.teamId, teams),
+                  }}
                 />
                 <p className="truncate text-sm font-black text-white">
                   {record.activityTitle} · {getTeamName(record.teamId, teams)}
@@ -527,11 +580,17 @@ function ScoreHistoryPanel({
                 )}
               </div>
               {record.note && (
-                <p className="mt-1 truncate text-sm font-semibold text-slate-300">{record.note}</p>
+                <p className="mt-1 truncate text-sm font-semibold text-slate-300">
+                  {record.note}
+                </p>
               )}
-              <p className="mt-1 text-xs font-bold text-slate-400">{formatCreatedTime(record.createdAt)}</p>
+              <p className="mt-1 text-xs font-bold text-slate-400">
+                {formatCreatedTime(record.createdAt)}
+              </p>
             </div>
-            <p className={`text-2xl font-black ${record.points >= 0 ? "text-emerald-200" : "text-rose-200"}`}>
+            <p
+              className={`text-2xl font-black ${record.points >= 0 ? "text-emerald-200" : "text-rose-200"}`}
+            >
               {formatSignedScore(record.points)}
             </p>
           </article>
@@ -569,39 +628,40 @@ function RevealPanel({
           <p className="text-sm font-black uppercase tracking-[0.24em] text-fuchsia-200">
             Ranking Reveal
           </p>
-          <h2 className="mt-1 text-3xl font-black text-white">{getRevealStepTitle(revealStep)}</h2>
+          <h2 className="mt-1 text-3xl font-black text-white">
+            {getRevealStepTitle(revealStep)}
+          </h2>
           <p className="mt-1 text-sm font-bold text-slate-300">
-            공동 순위는 함께 공개됩니다. 숨김 카드는 점수와 순위를 표시하지 않습니다.
+            공동 순위는 함께 공개됩니다. 숨김 카드는 점수와 순위를 표시하지
+            않습니다.
           </p>
         </div>
 
-        {!isViewOnlyMode && (
-          <div className="flex flex-wrap gap-2">
-            <button
-              className="h-11 rounded-xl border border-white/18 px-4 text-sm font-black text-white transition hover:bg-white/10 disabled:opacity-40"
-              type="button"
-              disabled={revealStep <= 0}
-              onClick={() => onRevealStepChange(revealStep - 1)}
-            >
-              이전
-            </button>
-            <button
-              className="h-11 rounded-xl bg-fuchsia-300 px-4 text-sm font-black text-slate-950 transition hover:bg-fuchsia-200 disabled:bg-slate-600 disabled:text-slate-300"
-              type="button"
-              disabled={revealStep >= MAX_REVEAL_STEP}
-              onClick={() => onRevealStepChange(revealStep + 1)}
-            >
-              다음
-            </button>
-            <button
-              className="h-11 rounded-xl border border-white/18 px-4 text-sm font-black text-white transition hover:bg-white/10"
-              type="button"
-              onClick={onResetReveal}
-            >
-              리셋
-            </button>
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <button
+            className="h-11 rounded-xl border border-white/18 px-4 text-sm font-black text-white transition hover:bg-white/10 disabled:opacity-40"
+            type="button"
+            disabled={revealStep <= 0}
+            onClick={() => onRevealStepChange(revealStep - 1)}
+          >
+            이전
+          </button>
+          <button
+            className="h-11 rounded-xl bg-fuchsia-300 px-4 text-sm font-black text-slate-950 transition hover:bg-fuchsia-200 disabled:bg-slate-600 disabled:text-slate-300"
+            type="button"
+            disabled={revealStep >= MAX_REVEAL_STEP}
+            onClick={() => onRevealStepChange(revealStep + 1)}
+          >
+            다음
+          </button>
+          <button
+            className="h-11 rounded-xl border border-white/18 px-4 text-sm font-black text-white transition hover:bg-white/10"
+            type="button"
+            onClick={onResetReveal}
+          >
+            리셋
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -632,8 +692,12 @@ function RevealPanel({
                     />
                   </div>
                   <div>
-                    <h3 className="truncate text-3xl font-black text-white">{entry.team.name}</h3>
-                    <p className="mt-2 text-5xl font-black text-amber-100">{entry.totalScore}</p>
+                    <h3 className="truncate text-3xl font-black text-white">
+                      {entry.team.name}
+                    </h3>
+                    <p className="mt-2 text-5xl font-black text-amber-100">
+                      {entry.totalScore}
+                    </p>
                   </div>
                 </div>
               ) : (
@@ -642,7 +706,9 @@ function RevealPanel({
                     ?
                   </div>
                   <p className="text-xl font-black text-white">LOCKED</p>
-                  <p className="mt-2 text-sm font-bold text-slate-400">결과 공개 대기</p>
+                  <p className="mt-2 text-sm font-bold text-slate-400">
+                    결과 공개 대기
+                  </p>
                 </div>
               )}
             </article>
@@ -653,7 +719,77 @@ function RevealPanel({
   );
 }
 
-export function ScoreboardPage() {
+function ModeTogglePanel({
+  isViewOnlyMode,
+  onModeChange,
+}: {
+  isViewOnlyMode: boolean;
+  onModeChange: (isViewOnlyMode: boolean) => void;
+}) {
+  return (
+    <section className="rounded-2xl border border-white/12 bg-white/[0.07] p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-100">
+            Access Mode
+          </p>
+          <h2 className="mt-1 text-xl font-black text-white">
+            {isViewOnlyMode ? "View-only mode" : "Admin mode"}
+          </h2>
+        </div>
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.12em] ${
+            isViewOnlyMode
+              ? "bg-amber-300 text-slate-950"
+              : "bg-emerald-300 text-slate-950"
+          }`}
+        >
+          {isViewOnlyMode ? "VIEW" : "ADMIN"}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 rounded-2xl border border-white/12 bg-slate-950/60 p-1">
+        <button
+          className={`h-11 rounded-xl text-sm font-black transition ${
+            !isViewOnlyMode
+              ? "bg-cyan-300 text-slate-950"
+              : "text-slate-300 hover:bg-white/[0.08] hover:text-white"
+          }`}
+          type="button"
+          aria-pressed={!isViewOnlyMode}
+          onClick={() => onModeChange(false)}
+        >
+          Admin
+        </button>
+        <button
+          className={`h-11 rounded-xl text-sm font-black transition ${
+            isViewOnlyMode
+              ? "bg-amber-300 text-slate-950"
+              : "text-slate-300 hover:bg-white/[0.08] hover:text-white"
+          }`}
+          type="button"
+          aria-pressed={isViewOnlyMode}
+          onClick={() => onModeChange(true)}
+        >
+          View Only
+        </button>
+      </div>
+
+      <p className="mt-3 text-xs font-bold leading-5 text-slate-300">
+        보기 전용은 입력, 팀 관리, 초기화, 공개 컨트롤을 숨기고 점수판과 기록만
+        보여줍니다.
+      </p>
+    </section>
+  );
+}
+
+type ScoreboardPageProps = {
+  initialViewOnlyMode?: boolean | null;
+};
+
+export function ScoreboardPage({
+  initialViewOnlyMode = null,
+}: ScoreboardPageProps) {
   const teams = useScoreboardStore((state) => state.teams);
   const scoreRecords = useScoreboardStore((state) => state.scoreRecords);
   const activityTitle = useScoreboardStore((state) => state.activityTitle);
@@ -666,12 +802,25 @@ export function ScoreboardPage() {
   const setTeamCount = useScoreboardStore((state) => state.setTeamCount);
   const updateTeamName = useScoreboardStore((state) => state.updateTeamName);
   const updateTeamColor = useScoreboardStore((state) => state.updateTeamColor);
-  const setActivityTitle = useScoreboardStore((state) => state.setActivityTitle);
-  const toggleViewOnlyMode = useScoreboardStore((state) => state.toggleViewOnlyMode);
+  const setActivityTitle = useScoreboardStore(
+    (state) => state.setActivityTitle,
+  );
+  const setViewOnlyMode = useScoreboardStore((state) => state.setViewOnlyMode);
   const setRevealStep = useScoreboardStore((state) => state.setRevealStep);
   const resetReveal = useScoreboardStore((state) => state.resetReveal);
-  const clearScoreboardData = useScoreboardStore((state) => state.clearScoreboardData);
-  const leaderboardEntries = useMemo(() => getLeaderboardEntries(teams, scoreRecords), [teams, scoreRecords]);
+  const clearScoreboardData = useScoreboardStore(
+    (state) => state.clearScoreboardData,
+  );
+  const leaderboardEntries = useMemo(
+    () => getLeaderboardEntries(teams, scoreRecords),
+    [teams, scoreRecords],
+  );
+
+  useEffect(() => {
+    if (initialViewOnlyMode !== null) {
+      setViewOnlyMode(initialViewOnlyMode);
+    }
+  }, [initialViewOnlyMode, setViewOnlyMode]);
 
   function handleRemoveTeam(team: ScoreboardTeam) {
     const confirmed = window.confirm(
@@ -698,7 +847,9 @@ export function ScoreboardPage() {
   }
 
   function handleClearData() {
-    const confirmed = window.confirm("점수판 데이터를 모두 초기화할까요? 이 작업은 되돌릴 수 없습니다.");
+    const confirmed = window.confirm(
+      "점수판 데이터를 모두 초기화할까요? 이 작업은 되돌릴 수 없습니다.",
+    );
 
     if (confirmed) {
       clearScoreboardData();
@@ -709,7 +860,12 @@ export function ScoreboardPage() {
     <main className="min-h-screen overflow-x-hidden bg-[#080c18] p-6 text-white">
       <div className="mx-auto grid max-w-[1720px] gap-6 xl:grid-cols-[1fr_470px]">
         <div className="min-w-0 space-y-6">
-          <LeaderboardPanel entries={leaderboardEntries} />
+          {isViewOnlyMode ? (
+            <></>
+          ) : (
+            <LeaderboardPanel entries={leaderboardEntries} />
+          )}
+
           <RevealPanel
             entries={leaderboardEntries}
             revealStep={revealStep}
@@ -717,28 +873,33 @@ export function ScoreboardPage() {
             onRevealStepChange={setRevealStep}
             onResetReveal={resetReveal}
           />
-          <ScoreHistoryPanel records={scoreRecords} teams={teams} />
+          {isViewOnlyMode ? (
+            <></>
+          ) : (
+            <ScoreHistoryPanel records={scoreRecords} teams={teams} />
+          )}
         </div>
 
         <aside className="flex max-h-none w-full flex-col gap-4 overflow-visible rounded-[28px] border border-white/14 bg-slate-900/88 p-5 shadow-2xl xl:max-h-[calc(100vh-48px)] xl:overflow-auto">
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-cyan-300 p-4 text-slate-950">
-              <p className="text-xs font-black uppercase tracking-[0.18em]">Teams</p>
+              <p className="text-xs font-black uppercase tracking-[0.18em]">
+                Teams
+              </p>
               <p className="text-4xl font-black">{teams.length}</p>
             </div>
-            <button
-              className={`rounded-2xl border p-4 text-left transition ${
-                isViewOnlyMode
-                  ? "border-amber-200 bg-amber-300 text-slate-950"
-                  : "border-white/12 bg-white/[0.07] text-white hover:bg-white/[0.1]"
-              }`}
-              type="button"
-              onClick={toggleViewOnlyMode}
-            >
-              <p className="text-xs font-black uppercase tracking-[0.18em]">Mode</p>
-              <p className="mt-1 text-2xl font-black">{isViewOnlyMode ? "View Only" : "Admin"}</p>
-            </button>
+            <div className="rounded-2xl border border-white/12 bg-white/[0.07] p-4 text-white">
+              <p className="text-xs font-black uppercase tracking-[0.18em]">
+                Records
+              </p>
+              <p className="text-4xl font-black">{scoreRecords.length}</p>
+            </div>
           </div>
+
+          <ModeTogglePanel
+            isViewOnlyMode={isViewOnlyMode}
+            onModeChange={setViewOnlyMode}
+          />
 
           {!isViewOnlyMode && (
             <>
@@ -788,7 +949,8 @@ export function ScoreboardPage() {
             <section className="rounded-2xl border border-white/12 bg-white/[0.07] p-4">
               <p className="text-lg font-black text-white">보기 전용 모드</p>
               <p className="mt-2 text-sm font-bold leading-6 text-slate-300">
-                운영 입력과 공개 컨트롤을 숨기고, 리더보드와 기록 및 현재 공개 화면만 표시합니다.
+                운영 입력과 공개 컨트롤을 숨기고, 리더보드와 기록 및 현재 공개
+                화면만 표시합니다.
               </p>
             </section>
           )}

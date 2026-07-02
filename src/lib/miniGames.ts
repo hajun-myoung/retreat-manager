@@ -87,4 +87,10 @@ export const miniGames: MiniGame[] = [
     type: "ranked",
     description: "리듬과 집중력으로 실수를 줄이며 순위를 가르는 게임입니다.",
   },
+  {
+    id: "expression_game",
+    name: "표정 게임",
+    type: "ranked",
+    description: "제시된 감정을 가장 잘 드러내는 표정을 지어보세요",
+  },
 ];

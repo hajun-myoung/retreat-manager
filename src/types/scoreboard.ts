@@ -11,6 +11,7 @@ export type ScoreRecord = {
   points: number;
   note: string;
   createdAt: string;
+  source?: "activity" | "extra";
 };
 
 export type LeaderboardEntry = {
@@ -35,7 +36,17 @@ export type ScoreboardActions = {
     points: number;
     activityTitle: string;
     note: string;
+    source?: "activity" | "extra";
   }) => void;
+  addScoreRecords: (
+    records: Array<{
+      teamId: string;
+      points: number;
+      activityTitle: string;
+      note: string;
+      source?: "activity" | "extra";
+    }>,
+  ) => void;
   addTeam: () => void;
   removeTeam: (teamId: string) => void;
   setTeamCount: (count: number) => void;

@@ -144,7 +144,17 @@ function LeaderboardPanel({ entries }: { entries: LeaderboardEntry[] }) {
   );
 }
 
-function ScoreEntryPanel({
+function parseScoreValue(value: string) {
+  if (value.trim() === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+function BatchScoreEntryPanel({
   teams,
   activityTitle,
   onSubmit,
@@ -152,33 +162,64 @@ function ScoreEntryPanel({
 }: {
   teams: ScoreboardTeam[];
   activityTitle: string;
-  onSubmit: (input: { teamId: string; points: number; note: string }) => void;
+  onSubmit: (records: Array<{ teamId: string; points: number; note: string }>) => void;
   onActivityTitleChange: (activityTitle: string) => void;
 }) {
-  const [teamId, setTeamId] = useState(teams[0]?.id ?? "");
-  const [points, setPoints] = useState("");
-  const [note, setNote] = useState("");
-  const safeTeamId = teams.some((team) => team.id === teamId) ? teamId : teams[0]?.id ?? "";
+  const [pointsByTeamId, setPointsByTeamId] = useState<Record<string, string>>({});
+  const [errorMessage, setErrorMessage] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const safeActivityTitle = activityTitle.trim();
 
-    onSubmit({
-      teamId: safeTeamId,
-      points: Number(points),
-      note,
-    });
-    setPoints("");
-    setNote("");
+    if (!safeActivityTitle) {
+      setErrorMessage("활동 제목을 입력해 주세요.");
+      return;
+    }
+
+    const filledRows = teams
+      .map((team) => ({
+        teamId: team.id,
+        rawPoints: pointsByTeamId[team.id]?.trim() ?? "",
+      }))
+      .filter((row) => row.rawPoints !== "");
+
+    if (filledRows.length === 0) {
+      setErrorMessage("점수를 입력한 팀이 없습니다.");
+      return;
+    }
+
+    const invalidTeam = filledRows.find((row) => Number.isNaN(parseScoreValue(row.rawPoints)));
+
+    if (invalidTeam) {
+      const teamName = teams.find((team) => team.id === invalidTeam.teamId)?.name ?? "선택한 팀";
+      setErrorMessage(`${teamName} 점수가 올바른 숫자가 아닙니다.`);
+      return;
+    }
+
+    onSubmit(
+      filledRows.map((row) => ({
+        teamId: row.teamId,
+        points: Number(row.rawPoints),
+        note: "",
+      })),
+    );
+    setPointsByTeamId({});
+    setErrorMessage("");
   }
 
   return (
     <section className="rounded-2xl border border-white/12 bg-white/[0.07] p-4">
-      <h2 className="mb-3 text-lg font-black text-white">점수 입력</h2>
+      <div className="mb-3">
+        <h2 className="text-lg font-black text-white">활동 점수 일괄 입력</h2>
+        <p className="mt-1 text-xs font-bold leading-5 text-slate-300">
+          여러 팀 점수를 한 번에 입력합니다. 빈 칸은 건너뛰고, 제출 후 활동 제목은 유지됩니다.
+        </p>
+      </div>
       <form className="space-y-3" onSubmit={handleSubmit}>
         <label className="block">
           <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-slate-300">
-            Activity
+            Activity Title
           </span>
           <input
             className="h-11 w-full rounded-xl border border-white/15 bg-white px-3 text-base font-black text-slate-950 outline-none focus:border-cyan-300"
@@ -187,6 +228,105 @@ function ScoreEntryPanel({
           />
         </label>
 
+        <div className="space-y-2">
+          {teams.map((team) => (
+            <label
+              key={team.id}
+              className="grid grid-cols-[1fr_120px] items-center gap-3 rounded-xl bg-slate-950/45 p-3"
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <span
+                  className="h-4 w-4 shrink-0 rounded-full border border-white/40"
+                  style={{ backgroundColor: team.color }}
+                />
+                <span className="truncate text-sm font-black text-white">{team.name}</span>
+              </span>
+              <input
+                aria-label={`${team.name} activity points`}
+                className="h-10 rounded-lg border border-white/15 bg-white px-3 text-center text-base font-black text-slate-950 outline-none focus:border-cyan-300"
+                inputMode="decimal"
+                value={pointsByTeamId[team.id] ?? ""}
+                onChange={(event) => {
+                  setPointsByTeamId((current) => ({
+                    ...current,
+                    [team.id]: event.target.value,
+                  }));
+                  setErrorMessage("");
+                }}
+                placeholder="+/-"
+              />
+            </label>
+          ))}
+        </div>
+
+        {errorMessage && (
+          <p className="rounded-xl border border-rose-300/40 bg-rose-500/18 px-3 py-2 text-sm font-black text-rose-100">
+            {errorMessage}
+          </p>
+        )}
+
+        <button
+          className="h-12 w-full rounded-2xl bg-emerald-300 text-base font-black text-slate-950 transition hover:bg-emerald-200 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
+          type="submit"
+          disabled={teams.length === 0}
+        >
+          일괄 점수 추가
+        </button>
+      </form>
+    </section>
+  );
+}
+
+function ExtraScorePanel({
+  teams,
+  onSubmit,
+}: {
+  teams: ScoreboardTeam[];
+  onSubmit: (input: { teamId: string; points: number; activityTitle: string; note: string }) => void;
+}) {
+  const [teamId, setTeamId] = useState(teams[0]?.id ?? "");
+  const [activityTitle, setActivityTitle] = useState("Bonus/Penalty");
+  const [points, setPoints] = useState("");
+  const [note, setNote] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const safeTeamId = teams.some((team) => team.id === teamId) ? teamId : teams[0]?.id ?? "";
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!activityTitle.trim()) {
+      setErrorMessage("제목 또는 사유를 입력해 주세요.");
+      return;
+    }
+
+    const parsedPoints = parseScoreValue(points);
+
+    if (points.trim() === "" || parsedPoints === null || Number.isNaN(parsedPoints)) {
+      setErrorMessage("점수를 올바른 숫자로 입력해 주세요.");
+      return;
+    }
+
+    onSubmit({
+      teamId: safeTeamId,
+      points: parsedPoints,
+      activityTitle,
+      note,
+    });
+    setPoints("");
+    setNote("");
+    setErrorMessage("");
+  }
+
+  return (
+    <section className="rounded-2xl border border-amber-200/20 bg-amber-200/[0.07] p-4">
+      <div className="mb-3">
+        <h2 className="text-lg font-black text-white">추가 점수 / 벌점</h2>
+        <p className="mt-1 text-xs font-bold leading-5 text-amber-100">
+          한 팀 또는 일부 팀에만 적용되는 비정기 점수 입력입니다.
+        </p>
+      </div>
+
+      <form className="space-y-3" onSubmit={handleSubmit}>
         <div className="grid grid-cols-[1fr_120px] gap-2">
           <label className="block">
             <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-slate-300">
@@ -210,14 +350,30 @@ function ScoreEntryPanel({
             </span>
             <input
               className="h-11 w-full rounded-xl border border-white/15 bg-white px-3 text-center text-base font-black text-slate-950 outline-none focus:border-cyan-300"
-              type="number"
+              inputMode="decimal"
               value={points}
-              onChange={(event) => setPoints(event.target.value)}
+              onChange={(event) => {
+                setPoints(event.target.value);
+                setErrorMessage("");
+              }}
               placeholder="+/-"
-              required
             />
           </label>
         </div>
+
+        <label className="block">
+          <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-slate-300">
+            Title / Reason
+          </span>
+          <input
+            className="h-11 w-full rounded-xl border border-white/15 bg-white px-3 text-base font-black text-slate-950 outline-none focus:border-cyan-300"
+            value={activityTitle}
+            onChange={(event) => {
+              setActivityTitle(event.target.value);
+              setErrorMessage("");
+            }}
+          />
+        </label>
 
         <label className="block">
           <span className="mb-1 block text-xs font-black uppercase tracking-[0.14em] text-slate-300">
@@ -231,12 +387,18 @@ function ScoreEntryPanel({
           />
         </label>
 
+        {errorMessage && (
+          <p className="rounded-xl border border-rose-300/40 bg-rose-500/18 px-3 py-2 text-sm font-black text-rose-100">
+            {errorMessage}
+          </p>
+        )}
+
         <button
-          className="h-12 w-full rounded-2xl bg-emerald-300 text-base font-black text-slate-950 transition hover:bg-emerald-200 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
+          className="h-12 w-full rounded-2xl bg-amber-300 text-base font-black text-slate-950 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
           type="submit"
-          disabled={!safeTeamId || points.trim() === ""}
+          disabled={!safeTeamId || teams.length === 0}
         >
-          점수 추가
+          추가 점수 반영
         </button>
       </form>
     </section>
@@ -358,6 +520,11 @@ function ScoreHistoryPanel({
                 <p className="truncate text-sm font-black text-white">
                   {record.activityTitle} · {getTeamName(record.teamId, teams)}
                 </p>
+                {record.source && (
+                  <span className="shrink-0 rounded-full bg-white/[0.08] px-2 py-0.5 text-[10px] font-black uppercase text-slate-300">
+                    {record.source}
+                  </span>
+                )}
               </div>
               {record.note && (
                 <p className="mt-1 truncate text-sm font-semibold text-slate-300">{record.note}</p>
@@ -493,6 +660,7 @@ export function ScoreboardPage() {
   const isViewOnlyMode = useScoreboardStore((state) => state.isViewOnlyMode);
   const revealStep = useScoreboardStore((state) => state.revealStep);
   const addScoreRecord = useScoreboardStore((state) => state.addScoreRecord);
+  const addScoreRecords = useScoreboardStore((state) => state.addScoreRecords);
   const addTeam = useScoreboardStore((state) => state.addTeam);
   const removeTeam = useScoreboardStore((state) => state.removeTeam);
   const setTeamCount = useScoreboardStore((state) => state.setTeamCount);
@@ -574,16 +742,28 @@ export function ScoreboardPage() {
 
           {!isViewOnlyMode && (
             <>
-              <ScoreEntryPanel
+              <BatchScoreEntryPanel
                 teams={teams}
                 activityTitle={activityTitle}
+                onSubmit={(records) =>
+                  addScoreRecords(
+                    records.map((record) => ({
+                      ...record,
+                      activityTitle,
+                      source: "activity",
+                    })),
+                  )
+                }
+                onActivityTitleChange={setActivityTitle}
+              />
+              <ExtraScorePanel
+                teams={teams}
                 onSubmit={(input) =>
                   addScoreRecord({
                     ...input,
-                    activityTitle,
+                    source: "extra",
                   })
                 }
-                onActivityTitleChange={setActivityTitle}
               />
               <TeamManagementPanel
                 key={teams.length}

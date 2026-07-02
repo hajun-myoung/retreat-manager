@@ -140,7 +140,7 @@ export const useScoreboardStore = create<ScoreboardStore>()(
   persist(
     (set, get) => ({
       ...initialState,
-      addScoreRecord: ({ teamId, points, activityTitle, note }) => {
+      addScoreRecord: ({ teamId, points, activityTitle, note, source = "extra" }) => {
         const teamExists = get().teams.some((team) => team.id === teamId);
         const safePoints = Math.trunc(points);
 
@@ -158,7 +158,41 @@ export const useScoreboardStore = create<ScoreboardStore>()(
               activityTitle: normalizeActivityTitle(activityTitle),
               note: note.trim(),
               createdAt: new Date().toISOString(),
+              source,
             },
+            ...state.scoreRecords,
+          ],
+        }));
+      },
+      addScoreRecords: (records) => {
+        const teamIds = new Set(get().teams.map((team) => team.id));
+        const createdAt = new Date().toISOString();
+        const safeRecords = records
+          .map((record) => ({
+            ...record,
+            points: Math.trunc(record.points),
+            activityTitle: normalizeActivityTitle(record.activityTitle),
+            note: record.note.trim(),
+            source: record.source ?? "activity",
+          }))
+          .filter((record) => teamIds.has(record.teamId) && !Number.isNaN(record.points));
+
+        if (safeRecords.length === 0) {
+          return;
+        }
+
+        set((state) => ({
+          activityTitle: safeRecords[0]?.activityTitle ?? state.activityTitle,
+          scoreRecords: [
+            ...safeRecords.map((record) => ({
+              id: createRecordId(),
+              teamId: record.teamId,
+              points: record.points,
+              activityTitle: record.activityTitle,
+              note: record.note,
+              createdAt,
+              source: record.source,
+            })),
             ...state.scoreRecords,
           ],
         }));

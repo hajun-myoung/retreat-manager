@@ -8,13 +8,26 @@ type DifficultySelectorProps = {
   onChange: (difficulty: Difficulty) => void;
 };
 
-const options: Array<{ value: Difficulty; label: string; description: string }> = [
-  { value: "easy", label: "Easy", description: "3컵 · 6회 · 느림" },
-  { value: "normal", label: "Normal", description: "4컵 · 10회 · 보통" },
-  { value: "hard", label: "Hard", description: "5컵 · 16회 · 빠름" },
+const options: Array<{
+  value: Difficulty;
+  label: string;
+  description: string;
+}> = [
+  { value: "easy", label: "Easy", description: "4컵 · 10회 · 느림" },
+  { value: "normal", label: "Normal", description: "6컵 · 15회 · 보통" },
+  { value: "hard", label: "Hard", description: "6컵 · 22회 · 빠름" },
+  {
+    value: "superhard",
+    label: "SUPER Hard",
+    description: "8컵 · 30회 · 매우빠름",
+  },
 ];
 
-export function DifficultySelector({ difficulty, disabled, onChange }: DifficultySelectorProps) {
+export function DifficultySelector({
+  difficulty,
+  disabled,
+  onChange,
+}: DifficultySelectorProps) {
   return (
     <div className="grid gap-2">
       {options.map((option) => (
@@ -30,7 +43,9 @@ export function DifficultySelector({ difficulty, disabled, onChange }: Difficult
           onClick={() => onChange(option.value)}
         >
           <p className="text-lg font-black">{option.label}</p>
-          <p className="mt-1 text-sm font-bold text-slate-300">{option.description}</p>
+          <p className="mt-1 text-sm font-bold text-slate-300">
+            {option.description}
+          </p>
         </button>
       ))}
     </div>

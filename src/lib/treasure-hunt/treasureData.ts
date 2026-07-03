@@ -276,6 +276,33 @@ const initialTreasureHints: TreasureHint[] = [
     isFalseHint: false,
     isActive: true,
   },
+  {
+    id: 99,
+    code: "HELP",
+    content:
+      "Usage: unlock [options] [arguments]\n\noptions:\n --code\t give code as arguments, unlock matched hint",
+    type: "system",
+    isFalseHint: false,
+    isActive: true,
+  },
+  {
+    id: 98,
+    code: "--HELP",
+    content:
+      "Usage: unlock [options] [arguments]\n\noptions:\n --code\t give code as arguments, unlock matched hint",
+    type: "system",
+    isFalseHint: false,
+    isActive: true,
+  },
+  {
+    id: 97,
+    code: "-H",
+    content:
+      "Usage: unlock [options] [arguments]\n\noptions:\n --code\t give code as arguments, unlock matched hint",
+    type: "system",
+    isFalseHint: false,
+    isActive: true,
+  },
 ];
 
 let treasureHints: TreasureHint[] = initialTreasureHints.map((hint) => ({

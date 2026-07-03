@@ -166,9 +166,9 @@ const initialTreasureHints: TreasureHint[] = [
   {
     id: 23,
     code: "W2H8",
-    content: "블랙 가넷은 저주받았다",
+    content: "블랙 가넷은 가장 귀하며 축복받았다. 반드시 사용해야 한다.",
     type: "special",
-    isFalseHint: false,
+    isFalseHint: true,
     isActive: true,
     isSuspicious: true,
   },
@@ -271,7 +271,7 @@ const initialTreasureHints: TreasureHint[] = [
   {
     id: 36,
     code: "V1P9",
-    content: "주황색 단서는 신용할 수 없다",
+    content: "주황색 단서는 거짓이다",
     type: "system",
     isFalseHint: false,
     isActive: true,

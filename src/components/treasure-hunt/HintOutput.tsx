@@ -35,9 +35,12 @@ export function HintOutput({ hints }: HintOutputProps) {
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs uppercase text-emerald-500/80">
             <span>[HINT #{String(hint.id).padStart(2, "0")}]</span>
             <span>{typeLabel[hint.type]}</span>
-            {hint.isFalseHint ? <span className="text-orange-300">FALSE_SIGNAL</span> : null}
+            {/* {hint.isFalseHint ? <span className="text-orange-300">FALSE_SIGNAL</span> : null} */}
           </div>
-          <p className="mt-1 whitespace-pre-wrap break-words text-base leading-7" dir="auto">
+          <p
+            className="mt-1 whitespace-pre-wrap break-words text-base leading-7"
+            dir="auto"
+          >
             {hint.content}
           </p>
         </article>

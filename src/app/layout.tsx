@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "부루마블 데모 보드",
-  description: "수련회 오프닝 게임 운영용 보드 데모",
+  title: "PolyParty",
+  description:
+    "    보드게임, 점수판, 추첨, 미니게임까지 하나로 관리하는 행사 진행 플랫폼",
 };
 
 export default function RootLayout({
@@ -23,9 +24,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="ko"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
       <body className="min-h-full bg-[#080c18]">{children}</body>
     </html>
   );
 }
-

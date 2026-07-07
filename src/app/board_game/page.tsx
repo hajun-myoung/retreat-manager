@@ -12,12 +12,16 @@ export default function BoardGamePage() {
                 Retreat Opening Game
               </p>
               <h1 className="mt-2 text-4xl font-black tracking-normal text-white xl:text-6xl">
-                부루마블 데모 보드
+                홀리컴뱃
               </h1>
             </div>
             <div className="rounded-2xl border border-white/14 bg-white/[0.07] px-5 py-3 text-right">
-              <p className="text-sm font-bold text-slate-300">8팀 동시 이동 · 22칸 순환 보드</p>
-              <p className="text-lg font-black text-amber-200">미니게임 결과로 이동 확정</p>
+              <p className="text-sm font-bold text-slate-300">
+                8팀 동시 이동 · 22칸 순환 보드
+              </p>
+              <p className="text-lg font-black text-amber-200">
+                미니게임 결과로 이동 확정
+              </p>
             </div>
           </header>
           <Board />

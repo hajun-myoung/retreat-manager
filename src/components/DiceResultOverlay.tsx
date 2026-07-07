@@ -29,6 +29,10 @@ function getGridClass(teamCount: number) {
     return "grid-cols-1 md:grid-cols-2";
   }
 
+  if (teamCount <= 8) {
+    return "grid-cols-1 md:grid-cols-2 xl:grid-cols-4";
+  }
+
   if (teamCount <= 9) {
     return "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
   }
@@ -61,7 +65,7 @@ function TeamResultCard({
   return (
     <motion.article
       data-testid={`winner-card-${team.id}`}
-      className={`grid min-h-[190px] grid-rows-[auto_1fr_auto_auto] gap-3 rounded-2xl border p-4 text-white shadow-2xl transition ${
+      className={`dice-result-card grid min-h-[118px] grid-rows-[auto_auto_auto] gap-1.5 rounded-2xl border p-2 text-white shadow-2xl transition ${
         isWinner ? "border-amber-200 bg-amber-200/16" : "border-white/18 bg-white/[0.08]"
       }`}
       initial={{ scale: 0.94, y: 14, opacity: 0 }}
@@ -74,11 +78,11 @@ function TeamResultCard({
     >
       <header className="flex min-w-0 items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="h-4 w-4 shrink-0 rounded-full" style={{ backgroundColor: team.color }} />
-          <h3 className="truncate text-xl font-black">{team.name}</h3>
+          <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: team.color }} />
+          <h3 className="truncate text-base font-black">{team.name}</h3>
         </div>
         <button
-          className={`shrink-0 rounded-xl px-3 py-2 text-sm font-black transition ${
+          className={`shrink-0 rounded-xl px-2.5 py-1 text-xs font-black transition ${
             isWinner
               ? "bg-amber-300 text-slate-950"
               : "bg-slate-950/70 text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
@@ -92,31 +96,31 @@ function TeamResultCard({
         </button>
       </header>
 
-      <section className="flex min-h-[84px] items-center justify-center gap-4 rounded-2xl bg-slate-950/34 px-3 py-2">
-        <DiceAnimation value={baseValue || finalValue || 1} rolling={isDiceRolling && isParticipant} size={68} />
+      <section className="dice-result-primary flex min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-slate-950/34 px-2 py-1">
+        <DiceAnimation value={baseValue || finalValue || 1} rolling={isDiceRolling && isParticipant} size={42} />
         <div className="text-left">
-          <p className="text-5xl font-black leading-none text-white">
+          <p className="text-3xl font-black leading-none text-white">
             {isDiceRolling && isParticipant ? "..." : finalValue || (team.hasFinished ? "완" : "-")}
           </p>
-          <p className="mt-2 min-h-5 text-sm font-black text-amber-100">
+          <p className="mt-0.5 min-h-4 text-xs font-black text-amber-100">
             {isDiceRolling && isParticipant ? "굴리는 중" : resultText}
           </p>
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 text-center text-sm font-bold text-slate-200">
-        <div className="rounded-xl bg-slate-950/45 p-2">
+      <section className="dice-result-movement grid grid-cols-2 gap-1.5 text-center text-xs font-bold text-slate-200">
+        <div className="dice-result-previous rounded-xl bg-slate-950/45 p-1">
           <p className="text-xs text-slate-400">이전 위치</p>
-          <p className="text-xl font-black">{team.previousPosition}</p>
+          <p className="text-lg font-black">{team.previousPosition}</p>
         </div>
-        <div className="rounded-xl bg-slate-950/45 p-2">
+        <div className="dice-result-moving rounded-xl bg-slate-950/45 p-1">
           <p className="text-xs text-slate-400">이동 예정</p>
-          <p className="text-xl font-black">{team.position}</p>
+          <p className="text-lg font-black">{team.position}</p>
         </div>
       </section>
 
       <footer
-        className={`rounded-xl px-3 py-2 text-center text-sm font-black ${
+        className={`rounded-xl px-2 py-1 text-center text-xs font-black ${
           isWinner ? "bg-amber-300 text-slate-950" : "bg-rose-300/18 text-rose-100"
         }`}
       >
@@ -146,20 +150,20 @@ export function DiceResultOverlay({
       {visible && (
         <motion.div
           data-testid="dice-result-overlay"
-          className="absolute inset-0 z-40 bg-slate-950/90 p-4 text-white backdrop-blur-sm"
+          className="absolute inset-0 z-40 bg-slate-950/90 p-3 text-white backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
         >
-          <div className="mx-auto flex h-full max-h-[calc(100vh-2rem)] max-w-[1280px] flex-col overflow-hidden rounded-3xl border border-white/16 bg-slate-950/86 shadow-2xl">
-            <header className="shrink-0 border-b border-white/12 bg-white/[0.08] p-4">
+          <div className="mx-auto flex h-full max-w-[1280px] flex-col overflow-hidden rounded-3xl border border-white/16 bg-slate-950/86 shadow-2xl">
+            <header className="dice-result-header shrink-0 border-b border-white/12 bg-white/[0.08] p-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-black uppercase tracking-[0.18em] text-cyan-200">
                     Round {round} Result
                   </p>
-                  <h2 className="mt-1 text-2xl font-black md:text-3xl">라운드 결과 처리</h2>
+                  <h2 className="mt-1 text-2xl font-black">라운드 결과 처리</h2>
                   <p className="mt-1 text-sm font-bold text-slate-300 md:text-base">
                     {isDiceRolling
                       ? "주사위 굴리는 중..."
@@ -175,8 +179,8 @@ export function DiceResultOverlay({
               </div>
             </header>
 
-            <main className="min-h-0 flex-1 overflow-y-auto p-4">
-              <div className={`grid gap-4 ${getGridClass(teams.length)}`}>
+            <main className="min-h-0 flex-1 overflow-y-auto p-3">
+              <div className={`dice-result-grid grid gap-3 ${getGridClass(teams.length)}`}>
                 {teams.map((team) => (
                   <TeamResultCard
                     key={team.id}
@@ -190,21 +194,21 @@ export function DiceResultOverlay({
               </div>
             </main>
 
-            <footer className="shrink-0 border-t border-white/12 bg-slate-950/95 p-4">
+            <footer className="dice-result-footer shrink-0 border-t border-white/12 bg-slate-950/95 p-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xl font-black">
+                <p className="text-lg font-black">
                   선택된 승리팀 {selectedWinnerIds.length}팀
                 </p>
                 <div className="flex gap-3">
                   <button
-                    className="h-12 rounded-2xl border border-white/20 px-5 text-base font-black text-white transition hover:bg-white/10"
+                    className="h-11 rounded-2xl border border-white/20 px-5 text-base font-black text-white transition hover:bg-white/10"
                     type="button"
                     onClick={closeDiceOverlay}
                   >
                     닫기
                   </button>
                   <button
-                    className="h-12 rounded-2xl bg-amber-300 px-6 text-base font-black text-slate-950 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
+                    className="h-11 rounded-2xl bg-amber-300 px-6 text-base font-black text-slate-950 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
                     type="button"
                     disabled={isDiceRolling}
                     onClick={resolveRound}

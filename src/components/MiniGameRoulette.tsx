@@ -24,13 +24,17 @@ const typeLabels: Record<MiniGame["type"], string> = {
 
 export function MiniGameRoulette() {
   const miniGames = useGameStore((state) => state.miniGames);
+  const remainingMiniGameIds = useGameStore((state) => state.remainingMiniGameIds);
   const selectedMiniGameId = useGameStore((state) => state.selectedMiniGameId);
   const rouletteTargetMiniGameId = useGameStore((state) => state.rouletteTargetMiniGameId);
   const isRouletteRolling = useGameStore((state) => state.isRouletteRolling);
   const rollMiniGame = useGameStore((state) => state.rollMiniGame);
+  const resetMiniGamePool = useGameStore((state) => state.resetMiniGamePool);
   const setSelectedMiniGame = useGameStore((state) => state.setSelectedMiniGame);
   const selectedMiniGame =
     miniGames.find((miniGame) => miniGame.id === selectedMiniGameId) ?? miniGames[0];
+  const remainingCount = remainingMiniGameIds.length;
+  const isMiniGamePoolEmpty = remainingCount === 0;
   const selectedIndex = Math.max(
     0,
     miniGames.findIndex((miniGame) => miniGame.id === selectedMiniGame?.id),
@@ -53,9 +57,14 @@ export function MiniGameRoulette() {
     <div className="rounded-2xl border border-white/12 bg-white/[0.07] p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-lg font-black text-white">미니게임 추첨기</h2>
-        <span className="rounded-full bg-fuchsia-300 px-3 py-1 text-xs font-black text-slate-950">
-          {typeLabels[selectedMiniGame.type]}
-        </span>
+        <div className="flex flex-wrap justify-end gap-2">
+          <span className="rounded-full bg-cyan-300 px-3 py-1 text-xs font-black text-slate-950">
+            남은 {remainingCount}/{miniGames.length}
+          </span>
+          <span className="rounded-full bg-fuchsia-300 px-3 py-1 text-xs font-black text-slate-950">
+            {typeLabels[selectedMiniGame.type]}
+          </span>
+        </div>
       </div>
 
       <div
@@ -96,28 +105,48 @@ export function MiniGameRoulette() {
         </motion.div>
       </div>
 
-      <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto_auto]">
         <select
           className="h-12 min-w-0 rounded-xl border border-white/15 bg-slate-950 px-3 text-sm font-bold text-white outline-none focus:border-cyan-300"
           value={selectedMiniGame.id}
-          disabled={isRouletteRolling}
+          disabled={isRouletteRolling || isMiniGamePoolEmpty}
           onChange={(event) => setSelectedMiniGame(event.target.value)}
         >
-          {miniGames.map((miniGame) => (
-            <option key={miniGame.id} value={miniGame.id}>
-              {miniGame.name}
-            </option>
-          ))}
+          {miniGames.map((miniGame) => {
+            const isSelected = miniGame.id === selectedMiniGame.id;
+            const isRemaining = remainingMiniGameIds.includes(miniGame.id);
+
+            return (
+              <option key={miniGame.id} value={miniGame.id} disabled={!isSelected && !isRemaining}>
+                {miniGame.name}
+                {!isSelected && !isRemaining ? " (사용 완료)" : ""}
+              </option>
+            );
+          })}
         </select>
+        <button
+          className="h-12 rounded-xl border border-cyan-200/50 px-4 text-sm font-black text-cyan-100 transition hover:bg-cyan-200/10 disabled:cursor-not-allowed disabled:border-slate-600 disabled:text-slate-500"
+          type="button"
+          disabled={isRouletteRolling || remainingCount === miniGames.length}
+          onClick={resetMiniGamePool}
+        >
+          목록 초기화
+        </button>
         <button
           className="h-12 rounded-xl bg-fuchsia-300 px-4 text-sm font-black text-slate-950 transition hover:bg-fuchsia-200 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
           type="button"
-          disabled={isRouletteRolling}
+          disabled={isRouletteRolling || isMiniGamePoolEmpty}
           onClick={rollMiniGame}
         >
-          미니게임 추첨
+          {isMiniGamePoolEmpty ? "목록 소진" : "미니게임 추첨"}
         </button>
       </div>
+
+      {isMiniGamePoolEmpty && (
+        <div className="mt-3 rounded-2xl border border-amber-200/40 bg-amber-200/10 p-3 text-sm font-black text-amber-100">
+          모든 미니게임을 사용했습니다. 목록 초기화 후 추첨을 계속할 수 있습니다.
+        </div>
+      )}
 
       <div className="mt-3 rounded-2xl bg-slate-950/50 p-4">
         <p className="text-2xl font-black text-white">{selectedMiniGame.name}</p>

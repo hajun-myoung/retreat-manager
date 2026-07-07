@@ -42,6 +42,7 @@ export type GamePhase =
 export type GameState = {
   teams: Team[];
   miniGames: MiniGame[];
+  remainingMiniGameIds: string[];
   round: number;
   phase: GamePhase;
   burstMultiplier: 1 | 2;
@@ -69,6 +70,7 @@ export type GameActions = {
   openDiceOverlay: () => void;
   closeDiceOverlay: () => void;
   rollMiniGame: () => void;
+  resetMiniGamePool: () => void;
   setSelectedMiniGame: (miniGameId: string) => void;
   setBoardCellCount: (count: number) => void;
   setBoardShape: (shape: BoardShape) => void;

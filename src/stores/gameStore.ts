@@ -37,6 +37,7 @@ const MAX_TEAM_COUNT = 12;
 const DEFAULT_BOARD_SHAPE: BoardShape = "square";
 const MINI_GAME_ROULETTE_DURATION_MS = 3000;
 const DICE_ROLLING_DURATION_MS = 1500;
+const defaultMiniGameIds = miniGames.map((miniGame) => miniGame.id);
 
 function clampTeamCount(count: number) {
   if (Number.isNaN(count)) {
@@ -233,6 +234,7 @@ function normalizeDiceResults(
 const initialState: GameState = {
   teams: createInitialTeams(),
   miniGames,
+  remainingMiniGameIds: defaultMiniGameIds,
   round: 1,
   phase: "idle",
   burstMultiplier: 1,
@@ -309,6 +311,8 @@ export const useGameStore = create<GameStore>()(
           isDiceRolling: true,
           ...burstFields,
         });
+
+        get().rollMiniGame();
 
         window.setTimeout(() => {
           set({ isDiceRolling: false });
@@ -395,6 +399,7 @@ export const useGameStore = create<GameStore>()(
           ...initialState,
           teams: resetTeamsForNewGame(teams),
           miniGames,
+          remainingMiniGameIds: defaultMiniGameIds,
           finishRecords: [],
           boardCellCount,
           boardShape,
@@ -477,31 +482,70 @@ export const useGameStore = create<GameStore>()(
           return;
         }
 
-        const { miniGames: currentMiniGames } = get();
-        const selectedMiniGame = currentMiniGames[Math.floor(Math.random() * currentMiniGames.length)];
+        const { miniGames: currentMiniGames, remainingMiniGameIds } = get();
+        const availableMiniGames = currentMiniGames.filter((miniGame) =>
+          remainingMiniGameIds.includes(miniGame.id),
+        );
+
+        if (availableMiniGames.length === 0) {
+          set({
+            selectedMiniGameId: null,
+            rouletteTargetMiniGameId: null,
+            isRouletteRolling: false,
+          });
+          return;
+        }
+
+        const selectedMiniGame =
+          availableMiniGames[Math.floor(Math.random() * availableMiniGames.length)];
+        const selectedMiniGameId = selectedMiniGame?.id ?? null;
 
         window.setTimeout(() => {
+          const { rouletteTargetMiniGameId } = get();
+
+          if (rouletteTargetMiniGameId !== selectedMiniGameId) {
+            return;
+          }
+
+          const remainingMiniGameIds = get().remainingMiniGameIds.filter(
+            (miniGameId) => miniGameId !== selectedMiniGameId,
+          );
+
           set({
-            selectedMiniGameId: selectedMiniGame?.id ?? null,
+            selectedMiniGameId,
+            remainingMiniGameIds,
             rouletteTargetMiniGameId: null,
             isRouletteRolling: false,
           });
         }, MINI_GAME_ROULETTE_DURATION_MS);
 
         set({
-          rouletteTargetMiniGameId: selectedMiniGame?.id ?? null,
+          rouletteTargetMiniGameId: selectedMiniGameId,
           isRouletteRolling: true,
         });
       },
+      resetMiniGamePool: () => {
+        set({
+          remainingMiniGameIds: defaultMiniGameIds,
+          rouletteTargetMiniGameId: null,
+          isRouletteRolling: false,
+        });
+      },
       setSelectedMiniGame: (miniGameId) => {
-        const exists = get().miniGames.some((miniGame) => miniGame.id === miniGameId);
+        const { miniGames: currentMiniGames, remainingMiniGameIds, selectedMiniGameId } = get();
+        const exists = currentMiniGames.some((miniGame) => miniGame.id === miniGameId);
+        const isAlreadySelected = selectedMiniGameId === miniGameId;
+        const isAvailable = remainingMiniGameIds.includes(miniGameId);
 
-        if (!exists) {
+        if (!exists || (!isAlreadySelected && !isAvailable)) {
           return;
         }
 
         set({
           selectedMiniGameId: miniGameId,
+          remainingMiniGameIds: isAlreadySelected
+            ? remainingMiniGameIds
+            : remainingMiniGameIds.filter((remainingMiniGameId) => remainingMiniGameId !== miniGameId),
           rouletteTargetMiniGameId: null,
           isRouletteRolling: false,
         });
@@ -610,6 +654,12 @@ export const useGameStore = create<GameStore>()(
         )
           ? mergedState.selectedMiniGameId
           : miniGames[0]?.id ?? null;
+        const persistedRemainingMiniGameIds = Array.isArray(mergedState.remainingMiniGameIds)
+          ? mergedState.remainingMiniGameIds
+          : defaultMiniGameIds;
+        const remainingMiniGameIds = persistedRemainingMiniGameIds.filter((miniGameId) =>
+          defaultMiniGameIds.includes(miniGameId),
+        );
 
         return {
           ...mergedState,
@@ -622,6 +672,7 @@ export const useGameStore = create<GameStore>()(
           finishRecords: reconciledFinishRecords,
           lastDiceResults: normalizeDiceResults(mergedState.lastDiceResults),
           selectedMiniGameId,
+          remainingMiniGameIds,
           isManualBurstEnabled: Boolean(mergedState.isManualBurstEnabled),
           isRouletteRolling: false,
           rouletteTargetMiniGameId: null,
@@ -632,6 +683,7 @@ export const useGameStore = create<GameStore>()(
       partialize: (state) => ({
         teams: state.teams,
         miniGames: state.miniGames,
+        remainingMiniGameIds: state.remainingMiniGameIds,
         round: state.round,
         phase: state.phase,
         burstMultiplier: state.burstMultiplier,

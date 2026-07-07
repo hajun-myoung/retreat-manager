@@ -35,3 +35,47 @@ input {
   font: inherit;
 }
 
+@media (max-height: 820px) {
+  .dice-result-header,
+  .dice-result-footer {
+    padding: 0.5rem;
+  }
+
+  .dice-result-grid {
+    gap: 0.5rem;
+  }
+
+  .dice-result-card {
+    min-height: 112px;
+    gap: 0.375rem;
+    padding: 0.5rem;
+  }
+
+  .dice-result-primary {
+    min-height: 44px;
+  }
+}
+
+@media (max-height: 720px) {
+  .dice-result-previous {
+    display: none;
+  }
+
+  .dice-result-movement {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-height: 640px) {
+  .dice-result-moving {
+    display: none;
+  }
+
+  .dice-result-movement {
+    display: none;
+  }
+
+  .dice-result-card {
+    min-height: 96px;
+  }
+}

@@ -62,7 +62,7 @@ export const miniGames: MiniGame[] = [
     description: "K-POP 노래를 듣고 누구보다 빨리 가수-곡제목을 말하세요",
   },
   {
-    id: "kpop-song",
+    id: "kpop-song-10s",
     name: "노래 맞추기(K-POP, 2010년~)",
     type: "ranked",
     description: "K-POP 노래를 듣고 누구보다 빨리 가수-곡제목을 말하세요",

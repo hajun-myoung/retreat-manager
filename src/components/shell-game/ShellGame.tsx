@@ -11,6 +11,15 @@ export type GamePhase =
   | "shuffling"
   | "guessing"
   | "revealed";
+export type SwapAnimation = {
+  firstCupId: number;
+  secondCupId: number;
+  firstFromIndex: number;
+  firstToIndex: number;
+  secondFromIndex: number;
+  secondToIndex: number;
+  mode: "arc" | "straight";
+};
 
 type DifficultyConfig = {
   cupCount: number;
@@ -31,6 +40,7 @@ type ShellGameState = {
   playCount: number;
   correctCount: number;
   wrongCount: number;
+  activeSwapAnimation: SwapAnimation | null;
 };
 
 const difficultyConfig: Record<Difficulty, DifficultyConfig> = {
@@ -87,6 +97,13 @@ function swapOrder(order: number[], firstIndex: number, secondIndex: number) {
   return nextOrder;
 }
 
+function shouldUseStraightSwapAnimation() {
+  const randomValue = new Uint32Array(1);
+  window.crypto.getRandomValues(randomValue);
+
+  return randomValue[0] / 0xffffffff < 0.15;
+}
+
 function createInitialState(): ShellGameState {
   const config = difficultyConfig[initialDifficulty];
 
@@ -103,6 +120,7 @@ function createInitialState(): ShellGameState {
     playCount: 0,
     correctCount: 0,
     wrongCount: 0,
+    activeSwapAnimation: null,
   };
 }
 
@@ -184,6 +202,7 @@ export function ShellGame() {
       answerCupId: Math.min(current.answerCupId, config.cupCount - 1),
       phase: "idle",
       isAnswerVisible: false,
+      activeSwapAnimation: null,
     }));
   }
 
@@ -204,6 +223,7 @@ export function ShellGame() {
       cupOrder: initialOrder,
       phase: "showingAnswer",
       isAnswerVisible: false,
+      activeSwapAnimation: null,
     }));
 
     const revealTimer = window.setTimeout(() => {
@@ -225,11 +245,24 @@ export function ShellGame() {
       const timerId = window.setTimeout(
         () => {
           const [firstIndex, secondIndex] = pickSwapPair(state.cupCount);
+          const firstCupId = workingOrder[firstIndex];
+          const secondCupId = workingOrder[secondIndex];
+          const useStraightSwap = shouldUseStraightSwapAnimation();
+
           workingOrder = swapOrder(workingOrder, firstIndex, secondIndex);
 
           setState((current) => ({
             ...current,
             cupOrder: workingOrder,
+            activeSwapAnimation: {
+              firstCupId,
+              secondCupId,
+              firstFromIndex: firstIndex,
+              firstToIndex: secondIndex,
+              secondFromIndex: secondIndex,
+              secondToIndex: firstIndex,
+              mode: useStraightSwap ? "straight" : "arc",
+            },
           }));
 
           if (index === state.shuffleCount - 1) {
@@ -237,6 +270,7 @@ export function ShellGame() {
               setState((current) => ({
                 ...current,
                 phase: "guessing",
+                activeSwapAnimation: null,
               }));
             }, state.animationDuration + 80);
 
@@ -261,6 +295,7 @@ export function ShellGame() {
       ...current,
       selectedCupId: cupId,
       phase: "revealed",
+      activeSwapAnimation: null,
       playCount: current.playCount + 1,
       correctCount: current.correctCount + (isCorrect ? 1 : 0),
       wrongCount: current.wrongCount + (isCorrect ? 0 : 1),
@@ -326,6 +361,7 @@ export function ShellGame() {
                     !cup.hasBall
                   }
                   phase={state.phase}
+                  activeSwapAnimation={state.activeSwapAnimation}
                   animationDuration={state.animationDuration}
                   laneWidth={laneWidth}
                   onSelect={selectCup}

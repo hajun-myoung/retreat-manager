@@ -14,7 +14,14 @@ import { rollWeightedDice } from "@/src/lib/dice";
 import { miniGames } from "@/src/lib/miniGames";
 import { movePosition } from "@/src/lib/movement";
 import { GAME_STORAGE_KEY } from "@/src/lib/storage";
-import type { BoardShape, DiceRollResult, FinishRecord, GameState, GameStore, Team } from "@/src/types/game";
+import type {
+  BoardShape,
+  DiceRollResult,
+  FinishRecord,
+  GameState,
+  GameStore,
+  Team,
+} from "@/src/types/game";
 
 const teamColors = [
   "#ff4d6d",
@@ -60,7 +67,9 @@ function createTeam(index: number): Team {
 }
 
 function createInitialTeams(count = DEFAULT_TEAM_COUNT): Team[] {
-  return Array.from({ length: clampTeamCount(count) }, (_, index) => createTeam(index));
+  return Array.from({ length: clampTeamCount(count) }, (_, index) =>
+    createTeam(index),
+  );
 }
 
 function resetTeamsForNewGame(teams: Team[]): Team[] {
@@ -73,8 +82,13 @@ function resetTeamsForNewGame(teams: Team[]): Team[] {
   }));
 }
 
-function getBurstFields(teams: Team[], boardCellCount: number, isManualBurstEnabled: boolean) {
-  const isBurstActive = isManualBurstEnabled || shouldActivateBurst(teams, boardCellCount);
+function getBurstFields(
+  teams: Team[],
+  boardCellCount: number,
+  isManualBurstEnabled: boolean,
+) {
+  const isBurstActive =
+    isManualBurstEnabled || shouldActivateBurst(teams, boardCellCount);
 
   return {
     isBurstActive,
@@ -96,7 +110,9 @@ function addFinishRecordsForRound({
   round: number;
 }) {
   const finishCell = getFinishCellIndex(boardCellCount);
-  const recordedTeamIds = new Set(existingRecords.map((record) => record.teamId));
+  const recordedTeamIds = new Set(
+    existingRecords.map((record) => record.teamId),
+  );
   const nextRecords = [...existingRecords];
 
   teams.forEach((team) => {
@@ -147,7 +163,11 @@ function getSettledPhaseForTeams(phase: GameState["phase"], teams: Team[]) {
   return phase;
 }
 
-function reconcileFinishRecordsForTeams(records: FinishRecord[], teams: Team[], round: number) {
+function reconcileFinishRecordsForTeams(
+  records: FinishRecord[],
+  teams: Team[],
+  round: number,
+) {
   const teamsById = new Map(teams.map((team) => [team.id, team]));
   const recordedTeamIds = new Set<string>();
   const nextRecords: FinishRecord[] = records
@@ -272,7 +292,11 @@ export const useGameStore = create<GameStore>()(
 
         set({ phase: "rolling" });
 
-        const burstFields = getBurstFields(teams, boardCellCount, isManualBurstEnabled);
+        const burstFields = getBurstFields(
+          teams,
+          boardCellCount,
+          isManualBurstEnabled,
+        );
         const { isBurstActive } = burstFields;
         const appliedMultiplier = isBurstActive ? 2 : 1;
         const activeTeamIds = new Set(activeTeams.map((team) => team.id));
@@ -312,16 +336,25 @@ export const useGameStore = create<GameStore>()(
           ...burstFields,
         });
 
-        get().rollMiniGame();
+        // get().rollMiniGame();
 
         window.setTimeout(() => {
           set({ isDiceRolling: false });
         }, DICE_ROLLING_DURATION_MS);
       },
       toggleWinner: (teamId) => {
-        const { selectedWinnerIds, phase, isDiceOverlayVisible, isDiceRolling, lastDiceResults } = get();
+        const {
+          selectedWinnerIds,
+          phase,
+          isDiceOverlayVisible,
+          isDiceRolling,
+          lastDiceResults,
+        } = get();
 
-        if (isDiceRolling || (phase !== "awaitingMiniGame" && !isDiceOverlayVisible)) {
+        if (
+          isDiceRolling ||
+          (phase !== "awaitingMiniGame" && !isDiceOverlayVisible)
+        ) {
           return;
         }
 
@@ -379,7 +412,11 @@ export const useGameStore = create<GameStore>()(
           boardCellCount,
           round,
         });
-        const burstFields = getBurstFields(resolvedTeams, boardCellCount, isManualBurstEnabled);
+        const burstFields = getBurstFields(
+          resolvedTeams,
+          boardCellCount,
+          isManualBurstEnabled,
+        );
 
         set({
           teams: resolvedTeams,
@@ -428,18 +465,30 @@ export const useGameStore = create<GameStore>()(
               }
             : team,
         );
-        const burstFields = getBurstFields(teams, boardCellCount, isManualBurstEnabled);
-        const reconciledFinishRecords = reconcileFinishRecordsForTeams(finishRecords, teams, round);
+        const burstFields = getBurstFields(
+          teams,
+          boardCellCount,
+          isManualBurstEnabled,
+        );
+        const reconciledFinishRecords = reconcileFinishRecordsForTeams(
+          finishRecords,
+          teams,
+          round,
+        );
         const nextTeam = teams.find((team) => team.id === teamId);
         const nextLastDiceResults = nextTeam?.hasFinished
-          ? Object.fromEntries(Object.entries(lastDiceResults).filter(([id]) => id !== teamId))
+          ? Object.fromEntries(
+              Object.entries(lastDiceResults).filter(([id]) => id !== teamId),
+            )
           : lastDiceResults;
 
         set({
           teams,
           phase: getSettledPhaseForTeams(phase, teams),
           finishRecords: reconciledFinishRecords,
-          selectedWinnerIds: selectedWinnerIds.filter((id) => id !== teamId || !nextTeam?.hasFinished),
+          selectedWinnerIds: selectedWinnerIds.filter(
+            (id) => id !== teamId || !nextTeam?.hasFinished,
+          ),
           lastDiceResults: nextLastDiceResults,
           ...burstFields,
         });
@@ -497,7 +546,9 @@ export const useGameStore = create<GameStore>()(
         }
 
         const selectedMiniGame =
-          availableMiniGames[Math.floor(Math.random() * availableMiniGames.length)];
+          availableMiniGames[
+            Math.floor(Math.random() * availableMiniGames.length)
+          ];
         const selectedMiniGameId = selectedMiniGame?.id ?? null;
 
         window.setTimeout(() => {
@@ -532,8 +583,14 @@ export const useGameStore = create<GameStore>()(
         });
       },
       setSelectedMiniGame: (miniGameId) => {
-        const { miniGames: currentMiniGames, remainingMiniGameIds, selectedMiniGameId } = get();
-        const exists = currentMiniGames.some((miniGame) => miniGame.id === miniGameId);
+        const {
+          miniGames: currentMiniGames,
+          remainingMiniGameIds,
+          selectedMiniGameId,
+        } = get();
+        const exists = currentMiniGames.some(
+          (miniGame) => miniGame.id === miniGameId,
+        );
         const isAlreadySelected = selectedMiniGameId === miniGameId;
         const isAvailable = remainingMiniGameIds.includes(miniGameId);
 
@@ -545,14 +602,23 @@ export const useGameStore = create<GameStore>()(
           selectedMiniGameId: miniGameId,
           remainingMiniGameIds: isAlreadySelected
             ? remainingMiniGameIds
-            : remainingMiniGameIds.filter((remainingMiniGameId) => remainingMiniGameId !== miniGameId),
+            : remainingMiniGameIds.filter(
+                (remainingMiniGameId) => remainingMiniGameId !== miniGameId,
+              ),
           rouletteTargetMiniGameId: null,
           isRouletteRolling: false,
         });
       },
       setBoardCellCount: (count) => {
         const nextCellCount = clampBoardCellCount(count);
-        const { boardCellCount, teams, isManualBurstEnabled, finishRecords, round, phase } = get();
+        const {
+          boardCellCount,
+          teams,
+          isManualBurstEnabled,
+          finishRecords,
+          round,
+          phase,
+        } = get();
 
         if (nextCellCount === boardCellCount) {
           return;
@@ -569,7 +635,10 @@ export const useGameStore = create<GameStore>()(
         const finishCell = getFinishCellIndex(nextCellCount);
         const adjustedTeams = teams.map((team) => {
           const position = clampBoardPosition(team.position, nextCellCount);
-          const previousPosition = clampBoardPosition(team.previousPosition, nextCellCount);
+          const previousPosition = clampBoardPosition(
+            team.previousPosition,
+            nextCellCount,
+          );
 
           return {
             ...team,
@@ -578,8 +647,16 @@ export const useGameStore = create<GameStore>()(
             hasFinished: position === finishCell,
           };
         });
-        const burstFields = getBurstFields(adjustedTeams, nextCellCount, isManualBurstEnabled);
-        const reconciledFinishRecords = reconcileFinishRecordsForTeams(finishRecords, adjustedTeams, round);
+        const burstFields = getBurstFields(
+          adjustedTeams,
+          nextCellCount,
+          isManualBurstEnabled,
+        );
+        const reconciledFinishRecords = reconcileFinishRecordsForTeams(
+          finishRecords,
+          adjustedTeams,
+          round,
+        );
 
         set({
           boardCellCount: nextCellCount,
@@ -594,23 +671,37 @@ export const useGameStore = create<GameStore>()(
       },
       setTeamCount: (count) => {
         const nextTeamCount = clampTeamCount(count);
-        const { teams, selectedWinnerIds, boardCellCount, isManualBurstEnabled, finishRecords, round, phase } =
-          get();
+        const {
+          teams,
+          selectedWinnerIds,
+          boardCellCount,
+          isManualBurstEnabled,
+          finishRecords,
+          round,
+          phase,
+        } = get();
         const nextTeams =
           nextTeamCount <= teams.length
             ? teams.slice(0, nextTeamCount)
             : [
                 ...teams,
-                ...Array.from({ length: nextTeamCount - teams.length }, (_, index) =>
-                  createTeam(teams.length + index),
+                ...Array.from(
+                  { length: nextTeamCount - teams.length },
+                  (_, index) => createTeam(teams.length + index),
                 ),
               ];
         const nextTeamIds = new Set(nextTeams.map((team) => team.id));
-        const filteredFinishRecords = reconcileFinishRecordsForTeams(finishRecords, nextTeams, round);
+        const filteredFinishRecords = reconcileFinishRecordsForTeams(
+          finishRecords,
+          nextTeams,
+          round,
+        );
 
         set({
           teams: nextTeams,
-          selectedWinnerIds: selectedWinnerIds.filter((teamId) => nextTeamIds.has(teamId)),
+          selectedWinnerIds: selectedWinnerIds.filter((teamId) =>
+            nextTeamIds.has(teamId),
+          ),
           finishRecords: filteredFinishRecords,
           phase: getSettledPhaseForTeams(phase, nextTeams),
           ...getBurstFields(nextTeams, boardCellCount, isManualBurstEnabled),
@@ -653,12 +744,14 @@ export const useGameStore = create<GameStore>()(
           (miniGame) => miniGame.id === mergedState.selectedMiniGameId,
         )
           ? mergedState.selectedMiniGameId
-          : miniGames[0]?.id ?? null;
-        const persistedRemainingMiniGameIds = Array.isArray(mergedState.remainingMiniGameIds)
+          : (miniGames[0]?.id ?? null);
+        const persistedRemainingMiniGameIds = Array.isArray(
+          mergedState.remainingMiniGameIds,
+        )
           ? mergedState.remainingMiniGameIds
           : defaultMiniGameIds;
-        const remainingMiniGameIds = persistedRemainingMiniGameIds.filter((miniGameId) =>
-          defaultMiniGameIds.includes(miniGameId),
+        const remainingMiniGameIds = persistedRemainingMiniGameIds.filter(
+          (miniGameId) => defaultMiniGameIds.includes(miniGameId),
         );
 
         return {

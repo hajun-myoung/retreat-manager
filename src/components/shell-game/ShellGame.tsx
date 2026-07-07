@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ShellCup } from "@/src/components/shell-game/ShellCup";
 import { ShellGameControls } from "@/src/components/shell-game/ShellGameControls";
 
-export type Difficulty = "easy" | "normal" | "hard" | "superhard";
+// export type Difficulty = "easy" | "normal" | "hard" | "superhard";
+export type Difficulty = "easy" | "hard";
 export type GamePhase =
   | "idle"
   | "showingAnswer"
@@ -44,22 +45,22 @@ type ShellGameState = {
 };
 
 const difficultyConfig: Record<Difficulty, DifficultyConfig> = {
+  // easy: {
+  //   cupCount: 4,
+  //   shuffleCount: 10,
+  //   animationDuration: 550,
+  // },
+  // normal: {
+  //   cupCount: 6,
+  //   shuffleCount: 15,
+  //   animationDuration: 200,
+  // },
   easy: {
-    cupCount: 4,
-    shuffleCount: 10,
-    animationDuration: 550,
-  },
-  normal: {
-    cupCount: 6,
-    shuffleCount: 15,
-    animationDuration: 200,
-  },
-  hard: {
     cupCount: 6,
     shuffleCount: 22,
     animationDuration: 150,
   },
-  superhard: {
+  hard: {
     cupCount: 8,
     shuffleCount: 30,
     animationDuration: 130,

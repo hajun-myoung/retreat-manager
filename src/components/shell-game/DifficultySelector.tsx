@@ -13,12 +13,10 @@ const options: Array<{
   label: string;
   description: string;
 }> = [
-  { value: "easy", label: "Easy", description: "4컵 · 10회 · 느림" },
-  { value: "normal", label: "Normal", description: "6컵 · 15회 · 보통" },
-  { value: "hard", label: "Hard", description: "6컵 · 22회 · 빠름" },
+  { value: "easy", label: "Easy", description: "6컵 · 22회 · 빠름" },
   {
-    value: "superhard",
-    label: "SUPER Hard",
+    value: "hard",
+    label: "Hard",
     description: "8컵 · 30회 · 매우빠름",
   },
 ];

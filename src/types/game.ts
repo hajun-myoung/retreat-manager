@@ -13,6 +13,13 @@ export type MiniGame = {
   name: string;
   type: "ranked" | "passFail" | "manual";
   description: string;
+  media?: MiniGameMedia[];
+};
+
+export type MiniGameMedia = {
+  type: "pdf";
+  label: string;
+  src: string;
 };
 
 export type FinishRecord = {

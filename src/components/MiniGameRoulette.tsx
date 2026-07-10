@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import { useGameStore } from "@/src/stores/gameStore";
 import type { MiniGame } from "@/src/types/game";
@@ -22,17 +23,42 @@ const typeLabels: Record<MiniGame["type"], string> = {
   manual: "수동형",
 };
 
+const MiniGameInstructionViewer = dynamic(
+  () =>
+    import("@/src/components/MiniGameInstructionViewer").then(
+      (module) => module.MiniGameInstructionViewer,
+    ),
+  { ssr: false },
+);
+
 export function MiniGameRoulette() {
+  const [instructionMediaId, setInstructionMediaId] = useState<string | null>(
+    null,
+  );
   const miniGames = useGameStore((state) => state.miniGames);
-  const remainingMiniGameIds = useGameStore((state) => state.remainingMiniGameIds);
+  const remainingMiniGameIds = useGameStore(
+    (state) => state.remainingMiniGameIds,
+  );
   const selectedMiniGameId = useGameStore((state) => state.selectedMiniGameId);
-  const rouletteTargetMiniGameId = useGameStore((state) => state.rouletteTargetMiniGameId);
+  const rouletteTargetMiniGameId = useGameStore(
+    (state) => state.rouletteTargetMiniGameId,
+  );
   const isRouletteRolling = useGameStore((state) => state.isRouletteRolling);
   const rollMiniGame = useGameStore((state) => state.rollMiniGame);
   const resetMiniGamePool = useGameStore((state) => state.resetMiniGamePool);
-  const setSelectedMiniGame = useGameStore((state) => state.setSelectedMiniGame);
+  const setSelectedMiniGame = useGameStore(
+    (state) => state.setSelectedMiniGame,
+  );
   const selectedMiniGame =
-    miniGames.find((miniGame) => miniGame.id === selectedMiniGameId) ?? miniGames[0];
+    miniGames.find((miniGame) => miniGame.id === selectedMiniGameId) ??
+    miniGames[0];
+  const instructionPdf = selectedMiniGame.media?.find(
+    (media) => media.type === "pdf",
+  );
+  const openInstructionPdf =
+    instructionPdf && instructionMediaId === `${selectedMiniGame.id}:${instructionPdf.src}`
+      ? instructionPdf
+      : null;
   const remainingCount = remainingMiniGameIds.length;
   const isMiniGamePoolEmpty = remainingCount === 0;
   const selectedIndex = Math.max(
@@ -47,10 +73,14 @@ export function MiniGameRoulette() {
     () => Array.from({ length: REPEAT_COUNT }, () => miniGames).flat(),
     [miniGames],
   );
-  const idleAbsoluteIndex = IDLE_REPEAT_INDEX * miniGames.length + selectedIndex;
-  const rollingAbsoluteIndex = ROLL_TARGET_REPEAT_INDEX * miniGames.length + targetIndex;
+  const idleAbsoluteIndex =
+    IDLE_REPEAT_INDEX * miniGames.length + selectedIndex;
+  const rollingAbsoluteIndex =
+    ROLL_TARGET_REPEAT_INDEX * miniGames.length + targetIndex;
   const activeAbsoluteIndex =
-    isRouletteRolling && rouletteTargetMiniGameId ? rollingAbsoluteIndex : idleAbsoluteIndex;
+    isRouletteRolling && rouletteTargetMiniGameId
+      ? rollingAbsoluteIndex
+      : idleAbsoluteIndex;
   const translateY = -(activeAbsoluteIndex * ITEM_HEIGHT) + HIGHLIGHT_TOP;
 
   return (
@@ -59,7 +89,7 @@ export function MiniGameRoulette() {
         <h2 className="text-lg font-black text-white">미니게임 추첨기</h2>
         <div className="flex flex-wrap justify-end gap-2">
           <span className="rounded-full bg-cyan-300 px-3 py-1 text-xs font-black text-slate-950">
-            남은 {remainingCount}/{miniGames.length}
+            남은 게임 {remainingCount}/{miniGames.length} 개
           </span>
           <span className="rounded-full bg-fuchsia-300 px-3 py-1 text-xs font-black text-slate-950">
             {typeLabels[selectedMiniGame.type]}
@@ -117,7 +147,11 @@ export function MiniGameRoulette() {
             const isRemaining = remainingMiniGameIds.includes(miniGame.id);
 
             return (
-              <option key={miniGame.id} value={miniGame.id} disabled={!isSelected && !isRemaining}>
+              <option
+                key={miniGame.id}
+                value={miniGame.id}
+                disabled={!isSelected && !isRemaining}
+              >
                 {miniGame.name}
                 {!isSelected && !isRemaining ? " (사용 완료)" : ""}
               </option>
@@ -144,16 +178,40 @@ export function MiniGameRoulette() {
 
       {isMiniGamePoolEmpty && (
         <div className="mt-3 rounded-2xl border border-amber-200/40 bg-amber-200/10 p-3 text-sm font-black text-amber-100">
-          모든 미니게임을 사용했습니다. 목록 초기화 후 추첨을 계속할 수 있습니다.
+          모든 미니게임을 사용했습니다. 목록 초기화 후 추첨을 계속할 수
+          있습니다.
         </div>
       )}
 
       <div className="mt-3 rounded-2xl bg-slate-950/50 p-4">
-        <p className="text-2xl font-black text-white">{selectedMiniGame.name}</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <p className="text-2xl font-black text-white">
+            {selectedMiniGame.name}
+          </p>
+          {instructionPdf && (
+            <button
+              className="h-10 rounded-xl bg-cyan-300 px-3 text-sm font-black text-slate-950 transition hover:bg-cyan-200"
+              type="button"
+              onClick={() =>
+                setInstructionMediaId(`${selectedMiniGame.id}:${instructionPdf.src}`)
+              }
+            >
+              View Instructions
+            </button>
+          )}
+        </div>
         <p className="mt-2 text-sm font-semibold leading-6 text-slate-300">
           {selectedMiniGame.description}
         </p>
       </div>
+
+      {openInstructionPdf && (
+        <MiniGameInstructionViewer
+          media={openInstructionPdf}
+          miniGameName={selectedMiniGame.name}
+          onClose={() => setInstructionMediaId(null)}
+        />
+      )}
     </div>
   );
 }

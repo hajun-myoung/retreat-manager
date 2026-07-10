@@ -6,6 +6,13 @@ export const miniGames: MiniGame[] = [
     name: "초성퀴즈",
     type: "ranked",
     description: "제시된 초성을 보고 정답을 빠르게 맞히는 퀴즈 / 선착순 승리",
+    media: [
+      {
+        type: "pdf",
+        label: "진행 안내",
+        src: "/mini-game-instructions/initial-quiz.pdf",
+      },
+    ],
   },
   {
     id: "person-quiz",

@@ -62,8 +62,12 @@ export function MiniGameInstructionViewer({
             <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-200">
               Instructions
             </p>
-            <h2 className="truncate text-xl font-black text-white">{miniGameName}</h2>
-            <p className="mt-1 text-sm font-bold text-slate-300">{media.label}</p>
+            <h2 className="truncate text-xl font-black text-white">
+              {miniGameName}
+            </h2>
+            <p className="mt-1 text-sm font-bold text-slate-300">
+              {media.label}
+            </p>
           </div>
 
           <div className="flex flex-wrap justify-end gap-2">
@@ -82,14 +86,18 @@ export function MiniGameInstructionViewer({
               className="h-10 rounded-xl border border-white/18 px-3 text-sm font-black text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
               type="button"
               disabled={!canGoNext}
-              onClick={() => setPageNumber((page) => Math.min(pageCount, page + 1))}
+              onClick={() =>
+                setPageNumber((page) => Math.min(pageCount, page + 1))
+              }
             >
               다음
             </button>
             <button
               className="h-10 rounded-xl border border-white/18 px-3 text-sm font-black text-white transition hover:bg-white/10"
               type="button"
-              onClick={() => setZoom((value) => Math.max(MIN_ZOOM, value - ZOOM_STEP))}
+              onClick={() =>
+                setZoom((value) => Math.max(MIN_ZOOM, value - ZOOM_STEP))
+              }
             >
               축소
             </button>
@@ -103,7 +111,9 @@ export function MiniGameInstructionViewer({
             <button
               className="h-10 rounded-xl border border-white/18 px-3 text-sm font-black text-white transition hover:bg-white/10"
               type="button"
-              onClick={() => setZoom((value) => Math.min(MAX_ZOOM, value + ZOOM_STEP))}
+              onClick={() =>
+                setZoom((value) => Math.min(MAX_ZOOM, value + ZOOM_STEP))
+              }
             >
               확대
             </button>
@@ -117,7 +127,10 @@ export function MiniGameInstructionViewer({
           </div>
         </header>
 
-        <main ref={containerRef} className="min-h-0 flex-1 overflow-auto bg-slate-900 p-4">
+        <main
+          ref={containerRef}
+          className="min-h-0 flex-1 overflow-auto bg-slate-900 p-4"
+        >
           <Document
             file={media.src}
             className="flex min-h-full justify-center"

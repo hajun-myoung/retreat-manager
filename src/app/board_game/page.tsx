@@ -1,6 +1,11 @@
 import { Board } from "@/src/components/Board";
 import { FullscreenToggleButton } from "@/src/components/FullscreenToggleButton";
 import { RoundControlPanel } from "@/src/components/RoundControlPanel";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "정의마블 | PolyParty",
+};
 
 export default function BoardGamePage() {
   return (
@@ -13,7 +18,7 @@ export default function BoardGamePage() {
                 Retreat Opening Game
               </p>
               <h1 className="mt-2 text-4xl font-black tracking-normal text-white xl:text-6xl">
-                홀리컴뱃
+                정의마블
               </h1>
             </div>
             <div className="flex flex-wrap items-end justify-end gap-3">

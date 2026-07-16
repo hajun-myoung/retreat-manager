@@ -45,6 +45,37 @@ const DEFAULT_BOARD_SHAPE: BoardShape = "square";
 const MINI_GAME_ROULETTE_DURATION_MS = 3000;
 const DICE_ROLLING_DURATION_MS = 1500;
 const defaultMiniGameIds = miniGames.map((miniGame) => miniGame.id);
+const legacyMiniGameIdMap: Record<string, string> = {
+  "ccm-song-00s": "ccm-before-2010",
+  "ccm-song-10s": "ccm-from-2010",
+};
+const defaultMiniGameIdSet = new Set(defaultMiniGameIds);
+
+function normalizeMiniGameId(miniGameId: string | null | undefined) {
+  if (!miniGameId) {
+    return null;
+  }
+
+  return legacyMiniGameIdMap[miniGameId] ?? miniGameId;
+}
+
+function normalizeMiniGameIds(miniGameIds: string[]) {
+  const normalizedIds: string[] = [];
+
+  miniGameIds.forEach((miniGameId) => {
+    const normalizedId = normalizeMiniGameId(miniGameId);
+
+    if (
+      normalizedId &&
+      defaultMiniGameIdSet.has(normalizedId) &&
+      !normalizedIds.includes(normalizedId)
+    ) {
+      normalizedIds.push(normalizedId);
+    }
+  });
+
+  return normalizedIds;
+}
 
 function clampTeamCount(count: number) {
   if (Number.isNaN(count)) {
@@ -740,18 +771,21 @@ export const useGameStore = create<GameStore>()(
           mergedState.teams,
           mergedState.round,
         );
+        const normalizedSelectedMiniGameId = normalizeMiniGameId(
+          mergedState.selectedMiniGameId,
+        );
         const selectedMiniGameId = miniGames.some(
-          (miniGame) => miniGame.id === mergedState.selectedMiniGameId,
+          (miniGame) => miniGame.id === normalizedSelectedMiniGameId,
         )
-          ? mergedState.selectedMiniGameId
+          ? normalizedSelectedMiniGameId
           : (miniGames[0]?.id ?? null);
         const persistedRemainingMiniGameIds = Array.isArray(
           mergedState.remainingMiniGameIds,
         )
           ? mergedState.remainingMiniGameIds
           : defaultMiniGameIds;
-        const remainingMiniGameIds = persistedRemainingMiniGameIds.filter(
-          (miniGameId) => defaultMiniGameIds.includes(miniGameId),
+        const remainingMiniGameIds = normalizeMiniGameIds(
+          persistedRemainingMiniGameIds,
         );
 
         return {

@@ -123,10 +123,10 @@ export function MiniGameRoulette() {
                 key={`${miniGame.id}-${index}`}
                 data-active={isHighlighted ? "true" : "false"}
                 data-testid="mini-game-roulette-item"
-                className={`flex items-center justify-center px-4 text-center text-xl font-black ${
+                className={`flex min-w-0 items-center justify-center px-3 text-center text-base font-black leading-tight sm:text-lg ${
                   isHighlighted ? "text-amber-100" : "text-slate-400"
                 }`}
-                style={{ height: ITEM_HEIGHT, lineHeight: `${ITEM_HEIGHT}px` }}
+                style={{ height: ITEM_HEIGHT }}
               >
                 {miniGame.name}
               </div>

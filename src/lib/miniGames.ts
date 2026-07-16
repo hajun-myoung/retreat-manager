@@ -19,6 +19,7 @@ export const miniGames: MiniGame[] = [
     name: "인물퀴즈",
     type: "ranked",
     description: "사진으로 인물 맞히기 / 선착순 승리",
+    media: [{ type: "pdf", label: "인물퀴즈", src: "polyparty_ppt.pdf" }],
   },
   {
     id: "perfect-pitch",
@@ -75,18 +76,18 @@ export const miniGames: MiniGame[] = [
     description: "K-POP 노래를 듣고 누구보다 빨리 가수-곡제목을 말하세요",
   },
   {
-    id: "ccm-song-00s",
-    name: "노래 맞추기(CCM, ~00s)",
+    id: "ccm-before-2010",
+    name: "CCM 맞히기 — 2010년 이전",
     type: "ranked",
     description:
-      "2000년 이전 CCM을 듣고 누구보다 빨리 찬양팀-곡제목을 말하세요",
+      "2009년 이하에 발매된 CCM을 듣고 누구보다 빨리 찬양팀-곡제목을 말하세요",
   },
   {
-    id: "ccm-song-10s",
-    name: "노래 맞추기(CCM, 00s~)",
+    id: "ccm-from-2010",
+    name: "CCM 맞히기 — 2010년 이후",
     type: "ranked",
     description:
-      "2010년 이전 CCM을 듣고 누구보다 빨리 찬양팀-곡제목을 말하세요",
+      "2010년 이상에 발매된 CCM을 듣고 누구보다 빨리 찬양팀-곡제목을 말하세요",
   },
   {
     id: "tomato-game",

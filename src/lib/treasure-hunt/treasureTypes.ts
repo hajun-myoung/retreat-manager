@@ -1,19 +1,29 @@
-export type TreasureHintType = "score" | "location" | "special" | "fragment" | "system";
+export type TreasureHintType = "text" | "image" | "system";
 
-export type TreasureHint = {
+type BaseTreasureHint = {
   id: number;
   code: string;
-  content: string;
-  type: TreasureHintType;
   isFalseHint: boolean;
   isActive: boolean;
   isSuspicious?: boolean;
 };
 
-export type PublicTreasureHint = Pick<
-  TreasureHint,
-  "id" | "content" | "type" | "isFalseHint"
->;
+export type TextTreasureHint = BaseTreasureHint & {
+  type: "text" | "system";
+  content: string;
+};
+
+export type ImageTreasureHint = BaseTreasureHint & {
+  type: "image";
+  imageSrc: string;
+  alt: string;
+};
+
+export type TreasureHint = TextTreasureHint | ImageTreasureHint;
+
+export type PublicTreasureHint =
+  | Pick<TextTreasureHint, "id" | "content" | "type" | "isFalseHint">
+  | Pick<ImageTreasureHint, "id" | "imageSrc" | "alt" | "type" | "isFalseHint">;
 
 export type UnlockedTreasureHint = PublicTreasureHint & {
   code: string;

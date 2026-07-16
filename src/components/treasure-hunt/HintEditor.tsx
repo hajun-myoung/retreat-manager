@@ -7,7 +7,32 @@ type HintEditorProps = {
   onChange: (hint: TreasureHint) => void;
 };
 
-const hintTypes: TreasureHintType[] = ["score", "location", "special", "fragment", "system"];
+const hintTypes: TreasureHintType[] = ["text", "image", "system"];
+
+function toType(hint: TreasureHint, type: TreasureHintType): TreasureHint {
+  if (type === "image") {
+    return {
+      id: hint.id,
+      code: hint.code,
+      type,
+      imageSrc: hint.type === "image" ? hint.imageSrc : "",
+      alt: hint.type === "image" ? hint.alt : "",
+      isFalseHint: hint.isFalseHint,
+      isActive: hint.isActive,
+      isSuspicious: hint.isSuspicious,
+    };
+  }
+
+  return {
+    id: hint.id,
+    code: hint.code,
+    type,
+    content: hint.type === "image" ? "" : hint.content,
+    isFalseHint: hint.isFalseHint,
+    isActive: hint.isActive,
+    isSuspicious: hint.isSuspicious,
+  };
+}
 
 export function HintEditor({ hint, onChange }: HintEditorProps) {
   return (
@@ -47,7 +72,7 @@ export function HintEditor({ hint, onChange }: HintEditorProps) {
           <span className="mb-1 block text-xs uppercase text-emerald-500/80">type</span>
           <select
             value={hint.type}
-            onChange={(event) => onChange({ ...hint, type: event.target.value as TreasureHintType })}
+            onChange={(event) => onChange(toType(hint, event.target.value as TreasureHintType))}
             className="h-11 w-full border border-emerald-400/25 bg-black px-3 text-base text-emerald-100 outline-none focus:border-cyan-200"
           >
             {hintTypes.map((type) => (
@@ -57,15 +82,36 @@ export function HintEditor({ hint, onChange }: HintEditorProps) {
             ))}
           </select>
         </label>
-        <label className="block min-w-0">
-          <span className="mb-1 block text-xs uppercase text-emerald-500/80">hint</span>
-          <textarea
-            value={hint.content}
-            onChange={(event) => onChange({ ...hint, content: event.target.value })}
-            className="min-h-24 w-full resize-y border border-emerald-400/25 bg-black px-3 py-2 text-base leading-6 text-emerald-100 outline-none focus:border-cyan-200"
-            dir="auto"
-          />
-        </label>
+        {hint.type === "image" ? (
+          <div className="grid min-w-0 gap-3 md:grid-cols-2">
+            <label className="block min-w-0">
+              <span className="mb-1 block text-xs uppercase text-emerald-500/80">image src</span>
+              <input
+                value={hint.imageSrc}
+                onChange={(event) => onChange({ ...hint, imageSrc: event.target.value })}
+                className="h-11 w-full border border-emerald-400/25 bg-black px-3 text-base text-emerald-100 outline-none focus:border-cyan-200"
+              />
+            </label>
+            <label className="block min-w-0">
+              <span className="mb-1 block text-xs uppercase text-emerald-500/80">alt</span>
+              <input
+                value={hint.alt}
+                onChange={(event) => onChange({ ...hint, alt: event.target.value })}
+                className="h-11 w-full border border-emerald-400/25 bg-black px-3 text-base text-emerald-100 outline-none focus:border-cyan-200"
+              />
+            </label>
+          </div>
+        ) : (
+          <label className="block min-w-0">
+            <span className="mb-1 block text-xs uppercase text-emerald-500/80">hint</span>
+            <textarea
+              value={hint.content}
+              onChange={(event) => onChange({ ...hint, content: event.target.value })}
+              className="min-h-24 w-full resize-y border border-emerald-400/25 bg-black px-3 py-2 text-base leading-6 text-emerald-100 outline-none focus:border-cyan-200"
+              dir="auto"
+            />
+          </label>
+        )}
       </div>
     </article>
   );

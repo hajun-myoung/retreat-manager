@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import type { UnlockedTreasureHint } from "@/src/lib/treasure-hunt/treasureTypes";
 
 type HintOutputProps = {
@@ -5,12 +9,32 @@ type HintOutputProps = {
 };
 
 const typeLabel = {
-  score: "SCORE",
-  location: "LOCATION",
-  special: "SPECIAL",
-  fragment: "FRAGMENT",
+  text: "TEXT",
+  image: "IMAGE",
   system: "SYSTEM",
 };
+
+function HintImage({ alt, imageSrc }: { alt: string; imageSrc: string }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <p className="mt-2 break-words text-sm text-rose-300">
+        [IMAGE ERROR] 이미지 단서를 불러오지 못했습니다. {alt}
+      </p>
+    );
+  }
+
+  return (
+    <img
+      src={imageSrc}
+      alt={alt}
+      loading="lazy"
+      className="mt-3 block h-auto max-h-[58dvh] max-w-full rounded border border-cyan-300/20 object-contain"
+      onError={() => setHasError(true)}
+    />
+  );
+}
 
 export function HintOutput({ hints }: HintOutputProps) {
   if (hints.length === 0) {
@@ -37,12 +61,16 @@ export function HintOutput({ hints }: HintOutputProps) {
             <span>{typeLabel[hint.type]}</span>
             {/* {hint.isFalseHint ? <span className="text-orange-300">FALSE_SIGNAL</span> : null} */}
           </div>
-          <p
-            className="mt-1 whitespace-pre-wrap break-words text-base leading-7"
-            dir="auto"
-          >
-            {hint.content}
-          </p>
+          {hint.type === "image" ? (
+            <HintImage imageSrc={hint.imageSrc} alt={hint.alt} />
+          ) : (
+            <p
+              className="mt-1 whitespace-pre-wrap break-words text-base leading-7"
+              dir="auto"
+            >
+              {hint.content}
+            </p>
+          )}
         </article>
       ))}
     </div>

@@ -49,6 +49,58 @@ function createLogLine(text: string, tone?: LogLine["tone"]): LogLine {
   };
 }
 
+function normalizeStoredHint(item: unknown): UnlockedTreasureHint | null {
+  if (typeof item !== "object" || item === null) {
+    return null;
+  }
+
+  const hint = item as Record<string, unknown>;
+  const id = typeof hint.id === "number" ? hint.id : null;
+  const code = typeof hint.code === "string" ? hint.code : null;
+  const unlockedAt =
+    typeof hint.unlockedAt === "string" ? hint.unlockedAt : null;
+  const isFalseHint =
+    typeof hint.isFalseHint === "boolean" ? hint.isFalseHint : false;
+
+  if (id === null || !code || !unlockedAt) {
+    return null;
+  }
+
+  if (hint.type === "image") {
+    const imageSrc = typeof hint.imageSrc === "string" ? hint.imageSrc : null;
+    const alt = typeof hint.alt === "string" ? hint.alt : null;
+
+    if (!imageSrc || !alt) {
+      return null;
+    }
+
+    return {
+      id,
+      code,
+      unlockedAt,
+      type: "image",
+      imageSrc,
+      alt,
+      isFalseHint,
+    };
+  }
+
+  const content = typeof hint.content === "string" ? hint.content : null;
+
+  if (!content) {
+    return null;
+  }
+
+  return {
+    id,
+    code,
+    unlockedAt,
+    type: hint.type === "system" ? "system" : "text",
+    content,
+    isFalseHint,
+  };
+}
+
 function readStoredHints() {
   if (typeof window === "undefined") {
     return [];
@@ -62,17 +114,9 @@ function readStoredHints() {
       return [];
     }
 
-    return parsed.filter((item): item is UnlockedTreasureHint => {
-      return (
-        typeof item === "object" &&
-        item !== null &&
-        "id" in item &&
-        "content" in item &&
-        "type" in item &&
-        "isFalseHint" in item &&
-        "code" in item &&
-        "unlockedAt" in item
-      );
+    return parsed.flatMap((item) => {
+      const hint = normalizeStoredHint(item);
+      return hint ? [hint] : [];
     });
   } catch {
     return [];

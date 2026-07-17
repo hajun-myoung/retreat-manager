@@ -206,7 +206,8 @@ const initialTreasureHints: TreasureHint[] = [
   {
     id: 26,
     code: "R3Q9",
-    content: "- .-- ---   .-.. . - - . .-. ...   .... .. --. ....   ... -.-. --- .-.",
+    content:
+      "- .-- ---   .-.. . - - . .-. ...   .... .. --. ....   ... -.-. --- .-.",
     type: "text",
     isFalseHint: false,
     isActive: true,
@@ -230,7 +231,8 @@ const initialTreasureHints: TreasureHint[] = [
   {
     id: 29,
     code: "B1T7",
-    content: "경구개음 중 거센소리에\n해당하는 자음이 들어간 보석의 점수는 5이다.",
+    content:
+      "경구개음 중 거센소리에\n해당하는 자음이 들어간 보석의 점수는 5이다.",
     type: "text",
     isFalseHint: false,
     isActive: true,
@@ -294,7 +296,8 @@ const initialTreasureHints: TreasureHint[] = [
   {
     id: 37,
     code: "X4M7",
-    content: "아쿠아마린이 가장 낮은 점수라고? 점수가 없어지지만 않으면 돼~ - 뭔가 알고 있는 명하준",
+    content:
+      "아쿠아마린이 가장 낮은 점수라고? 점수가 없어지지만 않으면 돼~ - 뭔가 알고 있는 명하준",
     type: "text",
     isFalseHint: false,
     isActive: true,
@@ -318,7 +321,8 @@ const initialTreasureHints: TreasureHint[] = [
   {
     id: 40,
     code: "J9H2",
-    content: "1개는 적은 것 같고 2개는 많은 것 같으니 토파즈 같은 1.5인분이 있으면 좋겠어 - 배고픈 안정인",
+    content:
+      "1개는 적은 것 같고 2개는 많은 것 같으니 토파즈 같은 1.5인분이 있으면 좋겠어 - 배고픈 안정인",
     type: "text",
     isFalseHint: false,
     isActive: true,
@@ -333,7 +337,7 @@ const initialTreasureHints: TreasureHint[] = [
   },
   {
     id: 42,
-    code: "I2M4",
+    code: "N5W9",
     type: "image",
     imageSrc: "/treasure-hunt/hints/image-hint-01.png",
     alt: "보물찾기 이미지 단서 1",
@@ -342,7 +346,7 @@ const initialTreasureHints: TreasureHint[] = [
   },
   {
     id: 43,
-    code: "O7P3",
+    code: "A8C9",
     type: "image",
     imageSrc: "/treasure-hunt/hints/image-hint-02.png",
     alt: "보물찾기 이미지 단서 2",
@@ -351,7 +355,7 @@ const initialTreasureHints: TreasureHint[] = [
   },
   {
     id: 44,
-    code: "U5B8",
+    code: "Y1D8",
     type: "image",
     imageSrc: "/treasure-hunt/hints/image-hint-03.png",
     alt: "보물찾기 이미지 단서 3",
@@ -359,26 +363,8 @@ const initialTreasureHints: TreasureHint[] = [
     isActive: true,
   },
   {
-    id: 45,
-    code: "Y6N2",
-    type: "image",
-    imageSrc: "/treasure-hunt/hints/image-hint-04.png",
-    alt: "보물찾기 이미지 단서 4",
-    isFalseHint: false,
-    isActive: true,
-  },
-  {
-    id: 46,
-    code: "E3T9",
-    type: "image",
-    imageSrc: "/treasure-hunt/hints/image-hint-05.png",
-    alt: "보물찾기 이미지 단서 5",
-    isFalseHint: false,
-    isActive: true,
-  },
-  {
     id: 47,
-    code: "S4D6",
+    code: "U4X6",
     type: "image",
     imageSrc: "/treasure-hunt/hints/image-hint-06.png",
     alt: "보물찾기 이미지 단서 6",
@@ -386,26 +372,8 @@ const initialTreasureHints: TreasureHint[] = [
     isActive: true,
   },
   {
-    id: 48,
-    code: "W8F1",
-    type: "image",
-    imageSrc: "/treasure-hunt/hints/image-hint-07.png",
-    alt: "보물찾기 이미지 단서 7",
-    isFalseHint: false,
-    isActive: true,
-  },
-  {
-    id: 49,
-    code: "C5R7",
-    type: "image",
-    imageSrc: "/treasure-hunt/hints/image-hint-08.png",
-    alt: "보물찾기 이미지 단서 8",
-    isFalseHint: false,
-    isActive: true,
-  },
-  {
     id: 50,
-    code: "N9K4",
+    code: "Z2Q5",
     type: "image",
     imageSrc: "/treasure-hunt/hints/image-hint-09.png",
     alt: "보물찾기 이미지 단서 9",
@@ -413,29 +381,11 @@ const initialTreasureHints: TreasureHint[] = [
     isActive: true,
   },
   {
-    id: 51,
-    code: "L2H6",
-    type: "image",
-    imageSrc: "/treasure-hunt/hints/image-hint-10.png",
-    alt: "보물찾기 이미지 단서 10",
-    isFalseHint: false,
-    isActive: true,
-  },
-  {
     id: 52,
-    code: "P8V5",
+    code: "E7L3",
     type: "image",
     imageSrc: "/treasure-hunt/hints/image-hint-11.png",
     alt: "보물찾기 이미지 단서 11",
-    isFalseHint: false,
-    isActive: true,
-  },
-  {
-    id: 53,
-    code: "Z3A1",
-    type: "image",
-    imageSrc: "/treasure-hunt/hints/image-hint-12.png",
-    alt: "보물찾기 이미지 단서 12",
     isFalseHint: false,
     isActive: true,
   },

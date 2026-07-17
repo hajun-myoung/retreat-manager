@@ -38,7 +38,9 @@ function resizeParticipants(
     return participants.slice(0, nextCount);
   }
 
-  const additions = createDefaultParticipants(nextCount).slice(participants.length);
+  const additions = createDefaultParticipants(nextCount).slice(
+    participants.length,
+  );
 
   return [...participants, ...additions];
 }
@@ -53,7 +55,9 @@ function resizeDestinations(
     return destinations.slice(0, nextCount);
   }
 
-  const additions = createDefaultDestinations(nextCount).slice(destinations.length);
+  const additions = createDefaultDestinations(nextCount).slice(
+    destinations.length,
+  );
 
   return [...destinations, ...additions];
 }
@@ -68,9 +72,9 @@ export function LadderGame() {
   );
   const [config, setConfig] = useState<LadderConfig>(() => generateLadder(6));
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const [revealedParticipantIds, setRevealedParticipantIds] = useState<string[]>(
-    [],
-  );
+  const [revealedParticipantIds, setRevealedParticipantIds] = useState<
+    string[]
+  >([]);
   const [isAnimating, setIsAnimating] = useState(false);
 
   const assignments = useMemo(
@@ -97,7 +101,9 @@ export function LadderGame() {
     }
     const timeout = window.setTimeout(() => {
       setRevealedParticipantIds((ids) =>
-        ids.includes(activeParticipant.id) ? ids : [...ids, activeParticipant.id],
+        ids.includes(activeParticipant.id)
+          ? ids
+          : [...ids, activeParticipant.id],
       );
       setActiveIndex((index) =>
         index === null || index + 1 >= participants.length ? null : index + 1,
@@ -137,7 +143,7 @@ export function LadderGame() {
   };
 
   const activeParticipantId =
-    activeIndex === null ? null : participants[activeIndex]?.id ?? null;
+    activeIndex === null ? null : (participants[activeIndex]?.id ?? null);
   const isComplete = revealedParticipantIds.length === participants.length;
 
   return (
@@ -175,18 +181,35 @@ export function LadderGame() {
         <section className="grid min-h-0 flex-1 grid-cols-1 gap-5 xl:grid-cols-[390px_1fr_360px]">
           <aside className="max-h-[calc(100vh-150px)] overflow-auto rounded-[28px] border border-white/14 bg-slate-900/88 p-5 shadow-2xl">
             <div className="mb-4">
-              <label className="text-sm font-black text-slate-200" htmlFor="participant-count">
+              <label
+                className="text-sm font-black text-slate-200"
+                htmlFor="participant-count"
+              >
                 참가 수
               </label>
-              <input
-                id="participant-count"
-                className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-slate-950 px-4 text-lg font-black text-white outline-none focus:border-cyan-300"
-                min={MIN_COUNT}
-                max={MAX_COUNT}
-                type="number"
-                value={participantCount}
-                onChange={(event) => updateCount(Number(event.target.value))}
-              />
+              <div className="flex gap-4">
+                <button
+                  className="mt-2 h-12 rounded-2xl border border-white/15 bg-slate-950 px-4 text-lg font-black text-white transition-colors hover:bg-slate-900 active:bg-slate-800"
+                  onClick={() => updateCount(participantCount - 1)}
+                >
+                  -
+                </button>
+                <input
+                  id="participant-count"
+                  className="mt-2 h-12 w-full rounded-2xl border border-white/15 bg-slate-950 px-4 text-lg font-black text-white outline-none focus:border-cyan-300"
+                  min={MIN_COUNT}
+                  max={MAX_COUNT}
+                  type="number"
+                  value={participantCount}
+                  onChange={(event) => updateCount(Number(event.target.value))}
+                />
+                <button
+                  className="mt-2 h-12 rounded-2xl border border-white/15 bg-slate-950 px-4 text-lg font-black text-white transition-colors hover:bg-slate-900 active:bg-slate-800"
+                  onClick={() => updateCount(participantCount + 1)}
+                >
+                  +
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -251,7 +274,9 @@ export function LadderGame() {
                 const destination = destinations.find(
                   (item) => item.id === assignment?.destinationId,
                 );
-                const isRevealed = revealedParticipantIds.includes(participant.id);
+                const isRevealed = revealedParticipantIds.includes(
+                  participant.id,
+                );
 
                 return (
                   <div

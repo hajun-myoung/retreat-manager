@@ -198,7 +198,8 @@ const initialTreasureHints: TreasureHint[] = [
   {
     id: 25,
     code: "M8D4",
-    content: "숨겨진 개수가 4개인 보물은 적당히 좋거나 적당히 나쁘다.",
+    content:
+      "도적이 되고 싶은 자는 나에게...<명예의 전당> <어쌔신 Lv.250> 강지호 이수원",
     type: "text",
     isFalseHint: false,
     isActive: true,
